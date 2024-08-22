@@ -24,6 +24,8 @@ export enum ViewFitType {
 export class Viewer {
     constructor(renderer: Renderer, sceneManager: SceneManager) {
         this.renderer = renderer;
+        console.log(this.renderer);
+
         this.sceneManager = sceneManager;
 
         this.outlineEffect = new OutlineEffect(this.renderer as WebGLRenderer, { defaultAlpha: 0.7, defaultThickness: 0.004 });
@@ -41,6 +43,7 @@ export class Viewer {
         this.OnResizeCallback();
         this.sceneManager.modelManager.addListener("upVecChange", this.onUpVectorChange);
         this.sceneManager.addListener("loaded", this.onModelLoaded);
+        window.addEventListener("resize", () => this.OnResizeCallback());
 
         this.stats = new Stats();
         renderer.domElement.parentElement?.appendChild(this.stats.dom);
@@ -109,18 +112,6 @@ export class Viewer {
         this.sceneManager.SetCameraType(this.sceneManager.cameraType);
         this.selectionManager.transformControls.camera = this.sceneManager.GetCamera();
         this.Render();
-    }
-
-    FindIntersection(pointer: Vector2): Object3D | undefined {
-        let raycaster = new Raycaster();
-        if (this.sceneManager.viewType == ViewType.isolated)
-            raycaster.layers.set(1);
-        raycaster.setFromCamera(pointer, this.sceneManager.GetCamera());
-        let intersects = raycaster.intersectObjects(this.sceneManager.modelManager.GetModel().children);
-        if (intersects.length != 0) {
-            return intersects[0].object;
-        }
-        else return undefined;
     }
 
     Isolate() {

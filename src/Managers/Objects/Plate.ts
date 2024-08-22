@@ -90,6 +90,11 @@ export class Plane {
 
     Invert() {
         this.plane.negate();
+        this.min /= -1;
+        this.max /= -1;
+        const max = this.max;
+        this.max = this.min;
+        this.min = max;
     }
 
     SetOffset(offset: number) {

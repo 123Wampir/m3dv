@@ -1,4 +1,4 @@
-import { Box3, Color, Object3D, Sphere } from "three";
+import { Box3, Color, Object3D, Raycaster, Sphere, Vector2 } from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js"
 import type { Viewer } from "../Viewer";
 import { ViewType, type SceneManager } from "./SceneManager";
@@ -21,6 +21,7 @@ export class SelectionManager extends EventEmitter {
         this.transformControls.addEventListener('dragging-changed', function (event: any) {
             context.GetCameraControl().enabled = !event.value;
         });
+        this.viewer.renderer.domElement.addEventListener("click", e => this.onClickCallback(e));
     }
     selectionEnabled = false;
     viewer: Viewer;
@@ -94,5 +95,30 @@ export class SelectionManager extends EventEmitter {
         this.SELECTIONCOLOR = new Color(color).getHex();
         this.HideSelected();
         this.ShowSelected();
+    }
+
+    private onClickCallback(event: MouseEvent) {
+        const pointer = new Vector2();
+        pointer.x = (event.clientX / this.viewer.renderer.domElement.clientWidth) * 2 - 1;
+        pointer.y = - (event.clientY / this.viewer.renderer.domElement.clientHeight) * 2 + 1;
+        this.selectMany = event.shiftKey;
+        this.HideSelected();
+        if (this.selectionEnabled)
+            this.Select(this.FindIntersection(pointer));
+        else this.selectionEnabled = true;
+        this.ShowSelected();
+        this.viewer.Render();
+    }
+
+    private FindIntersection(pointer: Vector2): Object3D | undefined {
+        let raycaster = new Raycaster();
+        if (this.sceneManager.viewType == ViewType.isolated)
+            raycaster.layers.set(1);
+        raycaster.setFromCamera(pointer, this.sceneManager.GetCamera());
+        let intersects = raycaster.intersectObjects(this.sceneManager.modelManager.GetModel().children);
+        if (intersects.length != 0) {
+            return intersects[0].object;
+        }
+        else return undefined;
     }
 }

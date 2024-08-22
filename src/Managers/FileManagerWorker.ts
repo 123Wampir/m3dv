@@ -5,6 +5,8 @@ onmessage = async function (e) {
 
     let obj = new Object3D();
     let start = Date.now();
+    console.log(e.data);
+    
     await new FileManager(e.data[0]).LoadModel(e.data[1], e.data[2], obj);
     let end = Date.now();
     let diff = (end - start) / 1000;

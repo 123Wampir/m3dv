@@ -125,38 +125,33 @@ export class SceneManager extends EventEmitter {
 
     }
 
-    LoadModelFile(event: any) {
-        const f = event.target as any;
-        if (f.files.length != 0) {
-            const str = window.URL.createObjectURL(f.files[0]);
-            if (window.Worker != undefined) {
-                const worker = new Worker(new URL("./FileManagerWorker", import.meta.url), { type: "module" });
-                // console.log(workerUrl);
-                worker.postMessage([FileManager.occtimportjsWasmPath, str, f.files[0].name]);
-                console.log("posted");
+    LoadModelFile(filename: string, src: string) {
+        if (window.Worker == undefined) {
+            const worker = new Worker(new URL("./FileManagerWorker", import.meta.url), { type: "module" });
+            worker.postMessage([FileManager.occtimportjsWasmPath, src, filename]);
+            console.log("posted");
 
-                worker.onerror = function (e) { console.log(e); }
-                worker.onmessageerror = function (e) { console.log(e); }
-                worker.onmessage = (e) => {
-                    if (this.serviceGroup.children.length > 1)
-                        this.serviceGroup.children[1].removeFromParent();
-                    let object = new THREE.ObjectLoader().parse(e.data);
+            worker.onerror = function (e) { console.log(e); }
+            worker.onmessageerror = function (e) { console.log(e); }
+            worker.onmessage = (e) => {
+                if (this.serviceGroup.children.length > 1)
+                    this.serviceGroup.children[1].removeFromParent();
+                let object = new THREE.ObjectLoader().parse(e.data);
+                this.emit("loaded", object);
+                worker.terminate();
+            };
+        }
+        else {
+            let object = new THREE.Object3D();
+            let start = Date.now();
+            this.fileManager.LoadModel(src, filename, object)
+                .then((e) => {
+                    let end = Date.now();
+                    let diff = (end - start) / 1000;
+                    console.log(`elapsed: ${diff} sec`);
                     this.emit("loaded", object);
-                    worker.terminate();
-                };
-            }
-            else {
-                let object = new THREE.Object3D();
-                let start = Date.now();
-                this.fileManager.LoadModel(str, f.files[0].name, object)
-                    .then((e) => {
-                        let end = Date.now();
-                        let diff = (end - start) / 1000;
-                        console.log(`elapsed: ${diff} sec`);
-                        this.emit("loaded", object);
-                    })
-                    .catch(e => console.log(e))
-            }
+                })
+                .catch(e => console.log(e))
         }
     }
 

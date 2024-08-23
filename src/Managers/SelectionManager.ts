@@ -1,9 +1,10 @@
 import { Box3, Color, Object3D, Raycaster, Sphere, Vector2 } from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js"
 import type { Viewer } from "../Viewer";
-import { ViewType, type SceneManager } from "./SceneManager";
-import { EventEmitter } from "../EventListener/Event";
+import { type SceneManager } from "./SceneManager";
+import { EventEmitter } from "../Event/Event";
 import { BoundingType } from "./ModelManager";
+import { ViewType } from "./Appearance";
 
 export class SelectionManager extends EventEmitter {
     constructor(sceneManager: SceneManager, viewer: Viewer, color: number = 0x0099FF) {
@@ -11,15 +12,15 @@ export class SelectionManager extends EventEmitter {
         this.sceneManager = sceneManager;
         this.viewer = viewer;
         this.SELECTIONCOLOR = color;
-        this.transformControls = new TransformControls(this.sceneManager.GetCamera(), this.viewer.renderer.domElement);
+        this.transformControls = new TransformControls(this.viewer.appearance.GetCamera(), this.viewer.renderer.domElement);
         this.transformControls.setSpace("local");
         sceneManager.GetScene().add(this.transformControls);
         this.transformControls.addEventListener('mouseUp', e => this.selectionEnabled = false);
-        this.viewer.orbitControls.addEventListener('change', e => this.selectionEnabled = false);
-        this.viewer.trackballControls.addEventListener('change', e => this.selectionEnabled = false);
+        this.viewer.controls.orbitControls.addEventListener('change', e => this.selectionEnabled = false);
+        this.viewer.controls.trackballControls.addEventListener('change', e => this.selectionEnabled = false);
         let context = viewer;
         this.transformControls.addEventListener('dragging-changed', function (event: any) {
-            context.GetCameraControl().enabled = !event.value;
+            context.controls.GetCameraControl().enabled = !event.value;
         });
         this.viewer.renderer.domElement.addEventListener("click", e => this.onClickCallback(e));
     }
@@ -31,6 +32,13 @@ export class SelectionManager extends EventEmitter {
     filters: string[] = [];
     target: Object3D[] = [];
     SELECTIONCOLOR = 0xff0000;
+
+    override addListener(event: "change", listener: Function): void {
+        super.addListener(event, listener);
+    }
+    override emit(event: "change", ...any: any): void {
+        super.emit(event, ...any);
+    }
 
     Select(object?: Object3D) {
         if (!this.selectMany) {
@@ -107,14 +115,14 @@ export class SelectionManager extends EventEmitter {
             this.Select(this.FindIntersection(pointer));
         else this.selectionEnabled = true;
         this.ShowSelected();
-        this.viewer.Render();
+        this.viewer.appearance.Render();
     }
 
     private FindIntersection(pointer: Vector2): Object3D | undefined {
         let raycaster = new Raycaster();
-        if (this.sceneManager.viewType == ViewType.isolated)
+        if (this.viewer.appearance.viewType == ViewType.isolated)
             raycaster.layers.set(1);
-        raycaster.setFromCamera(pointer, this.sceneManager.GetCamera());
+        raycaster.setFromCamera(pointer, this.viewer.appearance.GetCamera());
         let intersects = raycaster.intersectObjects(this.sceneManager.modelManager.GetModel().children);
         if (intersects.length != 0) {
             return intersects[0].object;

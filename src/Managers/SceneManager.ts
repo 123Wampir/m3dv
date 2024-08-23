@@ -2,25 +2,14 @@ import { AnimationManager } from "./AnimationManager/AnimationManager";
 import { ModelManager } from "./ModelManager";
 import * as THREE from "three";
 import { FileManager } from "../Managers/FileManager";
-import { EventEmitter } from "../EventListener/Event";
+import { EventEmitter } from "../Event/Event";
 import { Plane } from "./Objects/Plate";
 
-export enum CameraType {
-    perspective,
-    orthographic
-}
-
-export enum ViewType {
-    default,
-    isolated
-}
 
 export class SceneManager extends EventEmitter {
     constructor(scene: THREE.Scene) {
         super();
         this.scene = scene;
-        this.SetCameraType(this.cameraType);
-        this.camera.position.set(-10, 5, 5);
         this.modelManager = new ModelManager();
         this.scene.add(this.modelManager.GetModel());
         this.animationManager = new AnimationManager(this);
@@ -41,13 +30,10 @@ export class SceneManager extends EventEmitter {
         console.log(scene);
     }
 
-    viewType: ViewType = ViewType.default;
+
     animationManager: AnimationManager;
     modelManager!: ModelManager;
-    cameraType: CameraType = CameraType.perspective;
-    private camera!: THREE.Camera;
-    perspectiveCamera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(60, 16 / 9, 0.001, 10e6);
-    orthographicCamera: THREE.OrthographicCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.001, 10e6);
+
     private serviceGroup: THREE.Group = new THREE.Group();
     readonly fileManager: FileManager = new FileManager();
 
@@ -59,7 +45,6 @@ export class SceneManager extends EventEmitter {
         this.scene = scene;
         let ax = new THREE.AxesHelper(10);
         scene.add(ax);
-        this.camera.position.set(-10, 5, 5);
     }
     GetScene() {
         return this.scene;
@@ -153,26 +138,5 @@ export class SceneManager extends EventEmitter {
                 })
                 .catch(e => console.log(e))
         }
-    }
-
-
-    SetCameraType(type: CameraType) {
-        this.camera = type == CameraType.perspective ? this.perspectiveCamera : this.orthographicCamera;
-    }
-
-    SetCameraViewType(view: ViewType) {
-        if (view == ViewType.default) {
-            this.perspectiveCamera.layers.set(0);
-            this.orthographicCamera.layers.set(0);
-        }
-        else if (view == ViewType.isolated) {
-            this.perspectiveCamera.layers.set(1);
-            this.orthographicCamera.layers.set(1);
-        }
-        this.viewType = view;
-    }
-
-    GetCamera(): THREE.Camera {
-        return this.camera;
     }
 }

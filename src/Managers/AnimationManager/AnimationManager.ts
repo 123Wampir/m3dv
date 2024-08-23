@@ -1,5 +1,5 @@
 import { Object3D } from "three";
-import { EventEmitter } from "../../EventListener/Event";
+import { EventEmitter } from "../../Event/Event";
 import type { SceneManager } from "../SceneManager";
 import { Track } from "./Track";
 

@@ -11,11 +11,9 @@ export class Enviroment {
 
     constructor(viewer: Viewer) {
         this.viewer = viewer;
-        this.scene = viewer.sceneManager.GetScene();
     }
 
     private viewer: Viewer;
-    private scene: THREE.Scene;
     type: BackgroundType = BackgroundType.color;
     color: number | string = 0xAAAAAA;
     texture: THREE.DataTexture | null = null;
@@ -26,12 +24,12 @@ export class Enviroment {
             color = this.color;
 
         const colorObj = new THREE.Color(color);
-        this.scene.background = colorObj;
+        this.viewer.sceneManager.GetScene().background = colorObj;
 
         this.type = BackgroundType.color;
         this.color = color;
 
-        this.viewer.Render();
+        this.viewer.appearance.Render();
     }
 
     async SetBackgroundImage(url: string) {
@@ -41,34 +39,34 @@ export class Enviroment {
 
             envMap.mapping = THREE.EquirectangularReflectionMapping;
 
-            this.scene.background = envMap;
+            this.viewer.sceneManager.GetScene().background = envMap;
 
             this.texture = envMap;
 
-            this.viewer.Render();
+            this.viewer.appearance.Render();
         }
     }
 
     EnableTextureAsReflectionMap() {
         if (this.texture != null) {
-            this.scene.environment = this.texture;
+            this.viewer.sceneManager.GetScene().environment = this.texture;
 
-            this.viewer.Render();
+            this.viewer.appearance.Render();
         }
     }
 
     DisableTextureAsReflectionMap() {
-        this.scene.environment = null;
+        this.viewer.sceneManager.GetScene().environment = null;
 
-        this.viewer.Render();
+        this.viewer.appearance.Render();
     }
 
     private disposeTexture() {
         if (this.texture != null) {
             this.texture.dispose();
             this.texture = null;
-            this.scene.background = null;
-            this.scene.environment = null;
+            this.viewer.sceneManager.GetScene().background = null;
+            this.viewer.sceneManager.GetScene().environment = null;
         }
     }
 }

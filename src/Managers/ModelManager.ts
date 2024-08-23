@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { EventEmitter } from "../EventListener/Event";
-import { ViewType } from "./SceneManager";
+import { EventEmitter } from "../Event/Event";
+import { ViewType } from "./Appearance";
 
 export enum BoundingType {
     box,
@@ -20,6 +20,13 @@ export class ModelManager extends EventEmitter {
     private model: THREE.Object3D = new THREE.Object3D();
     private upVectorAxis: UpVectorAxis = UpVectorAxis.axisY;
     private defaultPositions: Map<THREE.Object3D, THREE.Vector3> = new Map();
+
+    override addListener(event: "change", listener: Function): void {
+        super.addListener(event, listener);
+    }
+    override emit(event: "change", ...any: any): void {
+        super.emit(event, ...any);
+    }
 
     GetModel() {
         return this.model;
@@ -55,7 +62,7 @@ export class ModelManager extends EventEmitter {
         this.upVectorAxis = upVector;
         this.moveToCenter();
         this.saveState();
-        this.emit("upVecChange", upVector);
+        this.emit("change", { up: upVector });
     }
 
     ResetState() {

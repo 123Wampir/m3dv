@@ -1,4 +1,4 @@
-import type { Viewer } from "../..//Viewer";
+import type { Viewer } from "../../Viewer";
 import * as THREE from "three"
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
@@ -24,12 +24,10 @@ export class Enviroment {
             color = this.color;
 
         const colorObj = new THREE.Color(color);
-        this.viewer.sceneManager.GetScene().background = colorObj;
+        this.viewer.sceneManager.scene.background = colorObj;
 
         this.type = BackgroundType.color;
         this.color = color;
-
-        this.viewer.appearance.Render();
     }
 
     async SetBackgroundImage(url: string) {
@@ -39,34 +37,28 @@ export class Enviroment {
 
             envMap.mapping = THREE.EquirectangularReflectionMapping;
 
-            this.viewer.sceneManager.GetScene().background = envMap;
+            this.viewer.sceneManager.scene.background = envMap;
 
             this.texture = envMap;
-
-            this.viewer.appearance.Render();
         }
     }
 
     EnableTextureAsReflectionMap() {
         if (this.texture != null) {
-            this.viewer.sceneManager.GetScene().environment = this.texture;
-
-            this.viewer.appearance.Render();
+            this.viewer.sceneManager.scene.environment = this.texture;
         }
     }
 
     DisableTextureAsReflectionMap() {
-        this.viewer.sceneManager.GetScene().environment = null;
-
-        this.viewer.appearance.Render();
+        this.viewer.sceneManager.scene.environment = null;
     }
 
     private disposeTexture() {
         if (this.texture != null) {
             this.texture.dispose();
             this.texture = null;
-            this.viewer.sceneManager.GetScene().background = null;
-            this.viewer.sceneManager.GetScene().environment = null;
+            this.viewer.sceneManager.scene.background = null;
+            this.viewer.sceneManager.scene.environment = null;
         }
     }
 }

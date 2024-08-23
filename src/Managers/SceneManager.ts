@@ -9,9 +9,9 @@ import { Plane } from "./Objects/Plate";
 export class SceneManager extends EventEmitter {
     constructor(scene: THREE.Scene) {
         super();
-        this.scene = scene;
+        this.SetScene(scene);
         this.modelManager = new ModelManager();
-        this.scene.add(this.modelManager.GetModel());
+        this.scene.add(this.modelManager.model);
         this.animationManager = new AnimationManager(this);
 
         const dirLight1 = new THREE.DirectionalLight();
@@ -39,15 +39,11 @@ export class SceneManager extends EventEmitter {
 
 
 
-    private scene!: THREE.Scene;
+    private _scene!: THREE.Scene;
 
+    get scene() { return this._scene; };
     SetScene(scene: THREE.Scene) {
-        this.scene = scene;
-        let ax = new THREE.AxesHelper(10);
-        scene.add(ax);
-    }
-    GetScene() {
-        return this.scene;
+        this._scene = scene;
     }
 
     lights: THREE.Light[] = [];
@@ -78,9 +74,9 @@ export class SceneManager extends EventEmitter {
         const y = new THREE.Plane(new THREE.Vector3(0, -1, 0));
         const z = new THREE.Plane(new THREE.Vector3(0, 0, -1));
 
-        let planeX = new Plane("x", x, this.modelManager.GetModel());
-        let planeY = new Plane("y", y, this.modelManager.GetModel());
-        let planeZ = new Plane("z", z, this.modelManager.GetModel());
+        let planeX = new Plane("x", x, this.modelManager.model);
+        let planeY = new Plane("y", y, this.modelManager.model);
+        let planeZ = new Plane("z", z, this.modelManager.model);
 
         this.planes.push(planeX);
         this.planes.push(planeY);

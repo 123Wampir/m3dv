@@ -41,7 +41,7 @@ class OutlineEffectPass extends Pass {
     override render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime: number, maskActive: boolean): void {
         if (maskActive)
             renderer.state.buffers.stencil.setTest(false);
-        this.outlineEffect.renderOutline(this.viewer.sceneManager.modelManager.GetModel() as any, this.viewer.appearance.GetCamera());
+        this.outlineEffect.renderOutline(this.viewer.sceneManager.modelManager.model as any, this.viewer.appearance.camera);
 
     }
 }

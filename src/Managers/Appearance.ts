@@ -1,11 +1,12 @@
-
 import { EventEmitter } from "../Event/Event";
 import * as THREE from "three";
-import { EffectComposer, OutputPass, Pass, RenderPass } from "three/examples/jsm/Addons.js";
-import { Enviroment } from "./Objects/Background";
+import { EffectComposer, OutputPass, RenderPass } from "three/examples/jsm/Addons.js";
+import { Enviroment } from "./Objects/Enviroment";
 import { Viewer } from "../Viewer";
 import { ControlsType } from "./Controls";
 import { Effects } from "./Effects";
+import { ComputeVolume } from "../Utils/Math";
+import { BoundingType } from "./ModelManager";
 
 export enum ViewType {
     default,
@@ -17,35 +18,106 @@ export enum CameraType {
     orthographic
 }
 
+export enum ViewFitType {
+    model,
+    selected,
+    isolated
+}
+
 export class Appearance extends EventEmitter {
     constructor(viewer: Viewer) {
         super();
 
         this.viewer = viewer;
-
+        viewer.sceneManager.scene.add(this.orthographicCamera);
         this.composer = new EffectComposer(viewer.renderer as THREE.WebGLRenderer);
         this.SetCameraType(CameraType.perspective);
         this._addDefaultPasses();
 
         this.enviroment = new Enviroment(viewer);
-        // this.enviroment.SetBackgroundColor();
+        this.enviroment.SetBackgroundColor();
 
         this.effects = new Effects(viewer);
+        window.addEventListener("resize", () => this._onResizeCallback());
     }
     private readonly viewer: Viewer;
+
     readonly composer: EffectComposer;
     readonly effects: Effects;
+    readonly enviroment: Enviroment;
 
-    hideSmallPartsOnCameraMove: boolean = false;
     renderEffects: boolean = true;
 
-    /// rework to get() set()
-    viewType: ViewType = ViewType.default;
-    readonly cameraType: CameraType = CameraType.perspective;
-    private camera: THREE.Camera;
-    readonly perspectiveCamera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(60, 16 / 9, 0.001, 10e6);
-    readonly orthographicCamera: THREE.OrthographicCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.001, 10e6);
-    readonly enviroment: Enviroment;
+    private _hideSmallPartsOnCameraMove: boolean = false;
+    get hideSmallPartsOnCameraMove() { return this._hideSmallPartsOnCameraMove; };
+    set hideSmallPartsOnCameraMove(value: boolean) {
+        if (value == true) {
+            this.viewer.controls.addListener("start", (e) => this._onstart());
+            this.viewer.controls.addListener("change", (e) => this._onchange());
+            this.viewer.controls.addListener("end", (e) => this._onend());
+        }
+        else {
+            console.log("");
+
+            this._smallParts.clear();
+            this.viewer.controls.removeListener("start", (e) => this._onstart());
+            this.viewer.controls.removeListener("change", (e) => this._onchange());
+            this.viewer.controls.removeListener("end", (e) => this._onend());
+            console.log(this.viewer.controls);
+
+        }
+        this._hideSmallPartsOnCameraMove = value;
+    }
+
+    private _noSmallParts = false;
+    private _smallParts: Map<THREE.Object3D, boolean> = new Map();
+    private _setSmallParts() {
+        const model = this.viewer.sceneManager.modelManager.model;
+        this._smallParts.clear();
+        const VOLUME_FACTOR = 10e3;
+        const MIN_VOLUME = ComputeVolume(model) / VOLUME_FACTOR;
+        model.traverse(item => {
+            if (ComputeVolume(item) < MIN_VOLUME) {
+                this._smallParts.set(item, item.visible);
+            }
+        });
+        this._noSmallParts = this._smallParts.size == 0;
+    }
+    private _onstart() {
+        if (this._smallParts.size == 0 && !this._noSmallParts)
+            this._setSmallParts();
+    }
+    private _onchange() {
+        if (this.viewer.appearance.viewType != ViewType.isolated) {
+            this._smallParts.forEach((value, item) => item.visible = false);
+        }
+    }
+    private _onend() {
+        this._smallParts.forEach((value, item) => item.visible = value);
+    }
+
+    private _wireframe: boolean = false;
+    get wireframe() { return this._wireframe; };
+    set wireframe(value: boolean) {
+        this.viewer.sceneManager.modelManager.model.traverse(object => {
+            let obj = object as any;
+            if (obj.material != undefined) {
+                obj.material.wireframe = value;
+            }
+        })
+        this._wireframe = value;
+    }
+
+    private _viewType: ViewType = ViewType.default;
+    get viewType() { return this._viewType; };
+
+    private _camera: THREE.Camera;
+    get camera() { return this._camera; };
+    private _cameraType: CameraType = CameraType.perspective;
+    get cameraType() { return this._cameraType; };
+
+    private readonly perspectiveCamera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(60, 16 / 9, 0.001, 10e6);
+    private readonly orthographicCamera: THREE.OrthographicCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.001, 10e6);
 
 
     Render() {
@@ -53,14 +125,19 @@ export class Appearance extends EventEmitter {
     }
 
     private _addDefaultPasses() {
-        const renderPass = new RenderPass(this.viewer.sceneManager.GetScene(), this.camera);
+        const renderPass = new RenderPass(this.viewer.sceneManager.scene, this.camera);
         const outputPass = new OutputPass();
         this.composer.addPass(renderPass);
         this.composer.addPass(outputPass);
     }
 
     SetCameraType(type: CameraType) {
-        this.camera = type == CameraType.perspective ? this.perspectiveCamera : this.orthographicCamera;
+        this._camera = type == CameraType.perspective ? this.perspectiveCamera : this.orthographicCamera;
+        this.composer.passes.forEach((pass: any) => {
+            if (pass.camera)
+                pass.camera = this.camera;
+        })
+        this._cameraType = type;
     }
 
     SetCameraViewType(view: ViewType) {
@@ -72,11 +149,11 @@ export class Appearance extends EventEmitter {
             this.perspectiveCamera.layers.set(1);
             this.orthographicCamera.layers.set(1);
         }
-        this.viewType = view;
+        this._viewType = view;
     }
 
-    GetCamera(): THREE.Camera {
-        return this.camera;
+    SetCameraPos(vec: THREE.Vector3) {
+        this.perspectiveCamera.position.copy(vec);
     }
 
     CopyCameraPlacement() {
@@ -87,11 +164,57 @@ export class Appearance extends EventEmitter {
         this.perspectiveCamera.updateMatrix();
         this.orthographicCamera.matrixAutoUpdate = false;
         this.orthographicCamera.matrix.copy(this.perspectiveCamera.matrix);
-        let zoom = this.viewer.controls.trackballControls.position0.length() /
-            this.perspectiveCamera.position.length() /
-            (2 * Math.atan(Math.PI * this.perspectiveCamera.fov / 360));
-        zoom /= 1.2;
-        this.orthographicCamera.zoom = zoom;
+        // let zoom = this.viewer.controls.trackballControls.position0.length() /
+        //     this.perspectiveCamera.position.length() /
+        //     (2 * Math.atan(Math.PI * this.perspectiveCamera.fov / 360));
+        // zoom /= 1.2;
+        // this.orthographicCamera.zoom = zoom;
         this.orthographicCamera.updateProjectionMatrix();
     }
+
+    FitInView(type: ViewFitType = ViewFitType.model) {
+        let bsphere = new THREE.Sphere();
+        switch (type) {
+            case ViewFitType.model:
+                bsphere = this.viewer.sceneManager.modelManager.GetBounding(BoundingType.sphere, ViewType.default) as THREE.Sphere;
+                break;
+            case ViewFitType.isolated:
+                bsphere = this.viewer.sceneManager.modelManager.GetBounding(BoundingType.sphere, ViewType.isolated) as THREE.Sphere;
+                break;
+            case ViewFitType.selected:
+                bsphere = this.viewer.selectionManager.GetBounding(BoundingType.sphere) as THREE.Sphere;
+        }
+        this.viewer.controls.GetCameraControl().target.copy(bsphere.center);
+        const direction = new THREE.Vector3();
+        this.camera.getWorldDirection(direction);
+        const finishPosition = bsphere.center.clone().add(direction.negate().normalize().multiplyScalar(bsphere.radius * 2));
+        this.SetCameraPos(finishPosition);
+    }
+
+    Reset() {
+        this.wireframe = false;
+        this._smallParts.clear();
+        this._noSmallParts = false;
+    }
+
+    private _onResizeCallback() {
+        const canvas = this.viewer.renderer.domElement;
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        const aspect = width / height;
+        const frustumSize = 12.5;
+        this.viewer.renderer.setSize(width, height, false);
+        this.composer.setSize(width, height);
+        this.perspectiveCamera.aspect = aspect;
+        this.perspectiveCamera.updateProjectionMatrix();
+        this.orthographicCamera.left = -frustumSize * aspect / 2;
+        this.orthographicCamera.right = frustumSize * aspect / 2;
+        this.orthographicCamera.top = frustumSize / 2;
+        this.orthographicCamera.bottom = -frustumSize / 2;
+        this.orthographicCamera.updateProjectionMatrix();
+        console.log(this.orthographicCamera);
+
+        this.Render();
+    }
+
 }

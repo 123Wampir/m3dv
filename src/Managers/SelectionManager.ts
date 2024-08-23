@@ -7,14 +7,14 @@ import { BoundingType } from "./ModelManager";
 import { ViewType } from "./Appearance";
 
 export class SelectionManager extends EventEmitter {
-    constructor(sceneManager: SceneManager, viewer: Viewer, color: number = 0x0099FF) {
+    constructor(viewer: Viewer, color: number = 0x0099FF) {
         super();
-        this.sceneManager = sceneManager;
+        this.sceneManager = viewer.sceneManager;
         this.viewer = viewer;
         this.SELECTIONCOLOR = color;
-        this.transformControls = new TransformControls(this.viewer.appearance.GetCamera(), this.viewer.renderer.domElement);
+        this.transformControls = new TransformControls(this.viewer.appearance.camera, this.viewer.renderer.domElement);
         this.transformControls.setSpace("local");
-        sceneManager.GetScene().add(this.transformControls);
+        viewer.sceneManager.scene.add(this.transformControls);
         this.transformControls.addEventListener('mouseUp', e => this.selectionEnabled = false);
         this.viewer.controls.orbitControls.addEventListener('change', e => this.selectionEnabled = false);
         this.viewer.controls.trackballControls.addEventListener('change', e => this.selectionEnabled = false);
@@ -107,8 +107,8 @@ export class SelectionManager extends EventEmitter {
 
     private onClickCallback(event: MouseEvent) {
         const pointer = new Vector2();
-        pointer.x = (event.clientX / this.viewer.renderer.domElement.clientWidth) * 2 - 1;
-        pointer.y = - (event.clientY / this.viewer.renderer.domElement.clientHeight) * 2 + 1;
+        pointer.x = (event.offsetX / this.viewer.renderer.domElement.clientWidth) * 2 - 1;
+        pointer.y = - (event.offsetY / this.viewer.renderer.domElement.clientHeight) * 2 + 1;
         this.selectMany = event.shiftKey;
         this.HideSelected();
         if (this.selectionEnabled)
@@ -122,8 +122,8 @@ export class SelectionManager extends EventEmitter {
         let raycaster = new Raycaster();
         if (this.viewer.appearance.viewType == ViewType.isolated)
             raycaster.layers.set(1);
-        raycaster.setFromCamera(pointer, this.viewer.appearance.GetCamera());
-        let intersects = raycaster.intersectObjects(this.sceneManager.modelManager.GetModel().children);
+        raycaster.setFromCamera(pointer, this.viewer.appearance.camera);
+        let intersects = raycaster.intersectObjects(this.sceneManager.modelManager.model.children);
         if (intersects.length != 0) {
             return intersects[0].object;
         }

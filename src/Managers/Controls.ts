@@ -13,10 +13,17 @@ export class Controls extends EventEmitter {
         super();
 
         this.viewer = viewer;
-        this.trackballControls = new TrackballControls(viewer.appearance.GetCamera(), viewer.renderer.domElement);
-        this.orbitControls = new OrbitControls(viewer.appearance.GetCamera(), viewer.renderer.domElement);
+        this.trackballControls = new TrackballControls(viewer.appearance.camera, viewer.renderer.domElement);
+        this.orbitControls = new OrbitControls(viewer.appearance.camera, viewer.renderer.domElement);
         this.SetCameraControl(ControlsType.orbit);
         this._initControls();
+    }
+
+    override addListener(event: "start" | "change" | "end", listener: Function): void {
+        super.addListener(event, listener);
+    }
+    override emit(event: "start" | "change" | "end", ...any: any): void {
+        super.emit(event, ...any);
     }
 
     private viewer: Viewer;
@@ -24,7 +31,7 @@ export class Controls extends EventEmitter {
     readonly trackballControls: TrackballControls;
     readonly orbitControls: OrbitControls;
 
-    controlsType: ControlsType = ControlsType.trackball;
+    controlsType: ControlsType = ControlsType.orbit;
     private cameraControl!: OrbitControls | TrackballControls;
 
     SetCameraControl(type: ControlsType) {
@@ -52,19 +59,14 @@ export class Controls extends EventEmitter {
 
     private _initControls() {
         const onstart = () => {
-            // if (this.viewer.appearance.hideSmallPartsOnCameraMove)
-            //     this.hideSmallParts = true;
+            this.emit("start", this);
         }
         const onchange = () => {
-            // if (this.hideSmallParts && this.viewer.appearance.viewType != ViewType.isolated) {
-            //     this.smallParts.forEach((value, item) => item.visible = false);
-            //     this.hideSmallParts = false;
-            // }
+            this.emit("change", this);
             this.viewer.appearance.Render();
         }
         const onend = () => {
-            // this.smallParts.forEach((value, item) => item.visible = value);
-            // this.hideSmallParts = false;
+            this.emit("end", this);
             this.viewer.appearance.Render();
         }
 

@@ -17,10 +17,6 @@ export class ModelManager extends EventEmitter {
         super()
     }
 
-    private model: THREE.Object3D = new THREE.Object3D();
-    private upVectorAxis: UpVectorAxis = UpVectorAxis.axisY;
-    private defaultPositions: Map<THREE.Object3D, THREE.Vector3> = new Map();
-
     override addListener(event: "change", listener: Function): void {
         super.addListener(event, listener);
     }
@@ -28,27 +24,23 @@ export class ModelManager extends EventEmitter {
         super.emit(event, ...any);
     }
 
-    GetModel() {
-        return this.model;
-    }
+    private defaultPositions: Map<THREE.Object3D, THREE.Vector3> = new Map();
 
+    private _model: THREE.Object3D = new THREE.Object3D();
+    get model() { return this._model; };
     SetModel(model: THREE.Object3D) {
         this.Dispose();
         this.model.add(model);
         this.model.rotation.x = 0;
-        this.upVectorAxis = UpVectorAxis.axisY;
+        this._upVectorAxis = UpVectorAxis.axisY;
         this.model.position.set(0, 0, 0);
         this.createUniqueMaterial();
         this.moveToCenter();
         this.saveState();
     }
 
-    SwitchUpVector() {
-        if (this.upVectorAxis == UpVectorAxis.axisY)
-            this.SetUpVector(UpVectorAxis.axisZ);
-        else this.SetUpVector(UpVectorAxis.axisY);
-    }
-
+    private _upVectorAxis: UpVectorAxis = UpVectorAxis.axisY;
+    get upVectorAxis() { return this._upVectorAxis; };
     SetUpVector(upVector: UpVectorAxis) {
         this.ResetState();
         switch (upVector) {
@@ -59,7 +51,7 @@ export class ModelManager extends EventEmitter {
                 this.model.rotation.x = -Math.PI * 90 / 180;
                 break;
         }
-        this.upVectorAxis = upVector;
+        this._upVectorAxis = upVector;
         this.moveToCenter();
         this.saveState();
         this.emit("change", { up: upVector });
@@ -73,15 +65,6 @@ export class ModelManager extends EventEmitter {
 
     GetDefaultPosition(model: THREE.Object3D) {
         return this.defaultPositions.get(model);
-    }
-
-    ShowWireframe(show: boolean = true) {
-        this.model.traverse(object => {
-            let obj = object as any;
-            if (obj.material != undefined) {
-                obj.material.wireframe = show;
-            }
-        })
     }
 
     GetBounding(type: BoundingType, view: ViewType = ViewType.default): THREE.Box3 | THREE.Sphere {
@@ -147,7 +130,7 @@ export class ModelManager extends EventEmitter {
                 // });
                 let material = new THREE.MeshToonMaterial({
                     color: mesh.material.color,
-                    side: THREE.DoubleSide
+                    side: THREE.DoubleSide,
                 });
                 mesh.material = material;
                 if (mesh.geometry.hasAttribute('color')) {

@@ -8,10 +8,19 @@
 </head>
 
 <body>
-<input type="file" accept=".gtlf,.glb,.step,.iges,.brep" id="load-file">
-
+    <input type="file" accept=".gtlf,.glb,.step,.iges,.brep" id="load-file">
+    <div>
+        <input type="checkbox" id="wireframe" />
+        <label for="wireframe">wireframe</label>
+        <input type="checkbox" id="smallparts" />
+        <label for="smallparts">hide small parts</label>
+        <input type="checkbox" id="camera" />
+        <label for="camera">orthographic</label>
+        <input type="checkbox" id="controls" />
+        <label for="controls">trackball</label>
+    </div>
+    <canvas id="canvas" />
 </body>
-<canvas id="canvas" />
 <script src="script.ts" type="module"></script>
 
 <style>

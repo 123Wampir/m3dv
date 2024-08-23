@@ -29,7 +29,7 @@ export class Appearance extends EventEmitter {
         super();
 
         this.viewer = viewer;
-        viewer.sceneManager.scene.add(this.orthographicCamera);
+        // viewer.sceneManager.scene.add(this.orthographicCamera);
         this.composer = new EffectComposer(viewer.renderer as THREE.WebGLRenderer);
         this.SetCameraType(CameraType.perspective);
         this._addDefaultPasses();
@@ -164,12 +164,8 @@ export class Appearance extends EventEmitter {
         this.perspectiveCamera.updateMatrix();
         this.orthographicCamera.matrixAutoUpdate = false;
         this.orthographicCamera.matrix.copy(this.perspectiveCamera.matrix);
-        // let zoom = this.viewer.controls.trackballControls.position0.length() /
-        //     this.perspectiveCamera.position.length() /
-        //     (2 * Math.atan(Math.PI * this.perspectiveCamera.fov / 360));
-        // zoom /= 1.2;
-        // this.orthographicCamera.zoom = zoom;
-        this.orthographicCamera.updateProjectionMatrix();
+        this.orthographicCamera.matrixWorld.copy(this.perspectiveCamera.matrix);
+        this._updateOrthographicCameraFrustum(this.perspectiveCamera.aspect);
     }
 
     FitInView(type: ViewFitType = ViewFitType.model) {
@@ -202,19 +198,28 @@ export class Appearance extends EventEmitter {
         const width = canvas.clientWidth;
         const height = canvas.clientHeight;
         const aspect = width / height;
-        const frustumSize = 12.5;
+
         this.viewer.renderer.setSize(width, height, false);
         this.composer.setSize(width, height);
+
         this.perspectiveCamera.aspect = aspect;
         this.perspectiveCamera.updateProjectionMatrix();
-        this.orthographicCamera.left = -frustumSize * aspect / 2;
-        this.orthographicCamera.right = frustumSize * aspect / 2;
-        this.orthographicCamera.top = frustumSize / 2;
-        this.orthographicCamera.bottom = -frustumSize / 2;
-        this.orthographicCamera.updateProjectionMatrix();
-        console.log(this.orthographicCamera);
+
+        this._updateOrthographicCameraFrustum(aspect);
 
         this.Render();
+    }
+
+    private _updateOrthographicCameraFrustum(aspect: number) {
+        const length = this.viewer.controls.orbitControls.target.clone().sub(this.perspectiveCamera.position).length();
+        const vertFov = this.perspectiveCamera.getEffectiveFOV();
+        const h = Math.abs(2 * length * Math.tan(vertFov / 2 * Math.PI / 180));
+        const w = h * aspect;
+        this.orthographicCamera.left = -w / 2;
+        this.orthographicCamera.right = w / 2;
+        this.orthographicCamera.top = h / 2;
+        this.orthographicCamera.bottom = -h / 2;
+        this.orthographicCamera.updateProjectionMatrix();
     }
 
 }

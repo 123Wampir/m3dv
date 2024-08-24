@@ -8,16 +8,16 @@ import { Controls } from "./Managers/Controls";
 
 
 export class Viewer {
-    constructor(context: WebGLRenderingContext) {
-        this.context = context;
-        this.renderer = new WebGLRenderer({ antialias: true, canvas: context.canvas, context: context!, logarithmicDepthBuffer: true });
+    constructor(canvas: HTMLCanvasElement) {
+        // this.canvas = canvas;
+        this.renderer = new WebGLRenderer({ antialias: true, canvas: canvas, logarithmicDepthBuffer: true });
         this.sceneManager = new SceneManager(new Scene());
         this.appearance = new Appearance(this);
         this.controls = new Controls(this);
+        // document.body.appendChild(this.renderer.domElement)
+        // this.appearance.effects.outline = true;
 
-        this.appearance.effects.outline = true;
-
-        this.selectionManager = new SelectionManager(this);
+        // this.selectionManager = new SelectionManager(this);
 
         this.sceneManager.modelManager.addListener("change", this.onUpVectorChange);
         this.sceneManager.addListener("loaded", this.onModelLoaded);
@@ -26,12 +26,11 @@ export class Viewer {
         this.renderer.domElement.parentElement?.appendChild(this.stats.dom);
         this.stats.dom.style.right = "0";
         this.stats.dom.style.left = "";
-
         this.SetAnimationLoop();
     }
 
     readonly renderer: Renderer;
-    private context: WebGLRenderingContext;
+    // private context: WebGLRenderingContext;
 
     readonly appearance: Appearance;
     readonly controls: Controls;

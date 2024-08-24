@@ -1,10 +1,10 @@
 import { EventEmitter } from "../Event/Event";
 import * as THREE from "three";
-import { EffectComposer, OutputPass, RenderPass } from "three/examples/jsm/Addons.js";
+import { EffectComposer, OutputPass } from "three/examples/jsm/Addons.js";
 import { Enviroment } from "./Objects/Enviroment";
 import { Viewer } from "../Viewer";
 import { ControlsType } from "./Controls";
-import { Effects } from "./Effects";
+import { Effects, MyRenderPass } from "./Effects";
 import { ComputeVolume } from "../Utils/Math";
 import { BoundingType } from "./ModelManager";
 
@@ -32,6 +32,7 @@ export class Appearance extends EventEmitter {
         // viewer.sceneManager.scene.add(this.orthographicCamera);
         this.composer = new EffectComposer(viewer.renderer as THREE.WebGLRenderer);
         this.SetCameraType(CameraType.perspective);
+        this.SetCameraPos(new THREE.Vector3(5, 5, 5));
         this._addDefaultPasses();
 
         this.enviroment = new Enviroment(viewer);
@@ -125,7 +126,7 @@ export class Appearance extends EventEmitter {
     }
 
     private _addDefaultPasses() {
-        const renderPass = new RenderPass(this.viewer.sceneManager.scene, this.camera);
+        const renderPass = new MyRenderPass(this.viewer);
         const outputPass = new OutputPass();
         this.composer.addPass(renderPass);
         this.composer.addPass(outputPass);

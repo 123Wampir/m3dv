@@ -107,7 +107,7 @@ export class SceneManager extends EventEmitter {
     }
 
     LoadModelFile(filename: string, src: string) {
-        if (window.Worker == undefined) {
+        if (window.Worker != undefined) {
             const worker = new Worker(new URL("./FileManagerWorker", import.meta.url), { type: "module" });
             worker.postMessage([FileManager.occtimportjsWasmPath, src, filename]);
             console.log("posted");

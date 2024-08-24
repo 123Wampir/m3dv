@@ -29,7 +29,21 @@ export class Effects extends EventEmitter {
     }
 }
 
-class OutlineEffectPass extends Pass {
+export class MyRenderPass extends Pass {
+    constructor(viewer: Viewer) {
+        super();
+        this.viewer = viewer;
+        this.needsSwap = true;
+    }
+    private viewer: Viewer;
+    override render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime: number, maskActive: boolean): void {
+        writeBuffer.stencilBuffer = true;
+        renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
+        this.viewer.renderer.render(this.viewer.sceneManager.scene, this.viewer.appearance.camera);
+    }
+}
+
+export class OutlineEffectPass extends Pass {
     constructor(viewer: Viewer, defaultAlpha: number = 0.7, defaultThickness: number = 0.004) {
         super();
         this.viewer = viewer;

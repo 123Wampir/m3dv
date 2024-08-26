@@ -1,8 +1,6 @@
-import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { CameraType } from "../src/Managers/Appearance";
 import { ControlsType } from "../src/Managers/Controls";
 import { Viewer } from "../src/Viewer";
-import * as THREE from "three";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const wireframe = document.getElementById("wireframe") as HTMLInputElement;
@@ -18,6 +16,7 @@ const yoffset = document.getElementById("planey-offset") as HTMLInputElement;
 const planez = document.getElementById("planez") as HTMLInputElement;
 const zoffset = document.getElementById("planez-offset") as HTMLInputElement;
 
+
 const viewer = new Viewer(canvas);
 const loadButton = document.getElementById("load-file");
 loadButton!.onchange = (e) => {
@@ -26,6 +25,7 @@ loadButton!.onchange = (e) => {
         const file = files[0] as File;
         const src = URL.createObjectURL(file);
         viewer.sceneManager.LoadModelFile(file.name, src);
+        viewer.sceneManager.addListener("loaded", () => UpdatePlanesMinMax());
     }
 }
 wireframe.onchange = (e) => {
@@ -65,4 +65,18 @@ planez.onchange = (e) => {
 zoffset.onchange = (e) => {
     const value = (e.target as any).value as number;
     viewer.sceneManager.planes[2].SetOffset(value);
+}
+
+
+function UpdatePlanesMinMax() {
+    xoffset.min = (viewer.sceneManager.planes[0].min - 1e-6).toString();
+    xoffset.max = (viewer.sceneManager.planes[0].max + 1e-6).toString();
+    yoffset.min = (viewer.sceneManager.planes[1].min - 1e-6).toString();
+    yoffset.max = (viewer.sceneManager.planes[1].max + 1e-6).toString();
+    zoffset.min = (viewer.sceneManager.planes[2].min - 1e-6).toString();
+    zoffset.max = (viewer.sceneManager.planes[2].max + 1e-6).toString();
+    xoffset.step = 1e-6.toString();
+    yoffset.step = 1e-6.toString();
+    zoffset.step = 1e-6.toString();
+
 }

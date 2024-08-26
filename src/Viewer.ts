@@ -9,7 +9,6 @@ import { Controls } from "./Managers/Controls";
 
 export class Viewer {
     constructor(canvas: HTMLCanvasElement) {
-        // this.canvas = canvas;
         this.renderer = new WebGLRenderer({ antialias: true, canvas: canvas, logarithmicDepthBuffer: true });
         this.sceneManager = new SceneManager(new Scene());
         this.appearance = new Appearance(this);
@@ -17,7 +16,7 @@ export class Viewer {
         // document.body.appendChild(this.renderer.domElement)
         // this.appearance.effects.outline = true;
 
-        // this.selectionManager = new SelectionManager(this);
+        this.selectionManager = new SelectionManager(this);
 
         this.sceneManager.modelManager.addListener("change", this.onUpVectorChange);
         this.sceneManager.addListener("loaded", this.onModelLoaded);

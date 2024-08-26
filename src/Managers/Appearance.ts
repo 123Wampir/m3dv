@@ -117,8 +117,8 @@ export class Appearance extends EventEmitter {
     private _cameraType: CameraType = CameraType.perspective;
     get cameraType() { return this._cameraType; };
 
-    private readonly perspectiveCamera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(60, 16 / 9, 0.001, 10e6);
-    private readonly orthographicCamera: THREE.OrthographicCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.001, 10e6);
+    private readonly perspectiveCamera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(60, 16 / 9, 1e-4, 1e4);
+    private readonly orthographicCamera: THREE.OrthographicCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1e-4, 1e4);
 
 
     Render() {

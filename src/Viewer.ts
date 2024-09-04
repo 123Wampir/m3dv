@@ -3,7 +3,7 @@ import { SelectionManager } from "./Managers/SelectionManager";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { Explode, ExplodeType } from "./Managers/Objects/Explode";
 import { Object3D, Renderer, Scene, WebGLRenderer } from "three";
-import { Appearance, ViewFitType } from "./Managers/Appearance";
+import { Appearance, ViewFitType, ViewType } from "./Managers/Appearance";
 import { Controls } from "./Managers/Controls";
 
 
@@ -26,6 +26,7 @@ export class Viewer {
         this.stats.dom.style.right = "0";
         this.stats.dom.style.left = "";
         this.SetAnimationLoop();
+        this.appearance.Resize();
     }
 
     readonly renderer: Renderer;
@@ -40,34 +41,25 @@ export class Viewer {
 
 
     private stats: Stats;
-    optimizedRendering: boolean = false;
-
-    SwitchCameraType() {
-        // this.sceneManager.cameraType = this.sceneManager.cameraType == CameraType.perspective ? CameraType.orthographic : CameraType.perspective;
-        // this.sceneManager.SetCameraType(this.sceneManager.cameraType);
-        // this.selectionManager.transformControls.camera = this.sceneManager.GetCamera();
-        // this.appearance.Render();
-    }
 
     Isolate() {
-        // if (this.sceneManager.viewType == ViewType.default) {
-        //     if (this.selectionManager.target.length != 0) {
-        //         console.log(this.selectionManager.target.length);
-        //         this.selectionManager.target.forEach(object => {
-        //             object.layers.toggle(1);
-        //         })
-        //         this.sceneManager.SetCameraViewType(ViewType.isolated);
-        //         this.FitInView(ViewFitType.isolated);
-        //     }
-        // }
-        // else {
-        //     this.sceneManager.modelManager.GetModel().traverse(obj => {
-        //         obj.layers.disable(1);
-        //     })
-        //     this.sceneManager.SetCameraViewType(ViewType.default);
-        //     this.FitInView(ViewFitType.model);
-        // }
-        // this.appearance.Render();
+        if (this.appearance.viewType == ViewType.default) {
+            if (this.selectionManager.target.length != 0) {
+                this.selectionManager.target.forEach(object => {
+                    object.layers.toggle(1);
+                })
+                this.appearance.SetCameraViewType(ViewType.isolated);
+                this.appearance.FitInView(ViewFitType.isolated);
+            }
+        }
+        else {
+            this.sceneManager.modelManager.model.traverse(obj => {
+                obj.layers.disable(1);
+            })
+            this.appearance.SetCameraViewType(ViewType.default);
+            this.appearance.FitInView(ViewFitType.model);
+        }
+        this.appearance.Render();
     }
 
     SetVisibility(model: Object3D, visible: boolean) {

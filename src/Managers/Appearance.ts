@@ -39,7 +39,7 @@ export class Appearance extends EventEmitter {
         this.enviroment.SetBackgroundColor();
 
         this.effects = new Effects(viewer);
-        window.addEventListener("resize", () => this._onResizeCallback());
+        window.addEventListener("resize", () => this.Resize());
     }
     private readonly viewer: Viewer;
 
@@ -194,7 +194,7 @@ export class Appearance extends EventEmitter {
         this._noSmallParts = false;
     }
 
-    private _onResizeCallback() {
+    Resize() {
         const canvas = this.viewer.renderer.domElement;
         const width = canvas.clientWidth;
         const height = canvas.clientHeight;

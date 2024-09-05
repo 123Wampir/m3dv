@@ -51,6 +51,7 @@ export class FileManager {
     }
 
     async LoadModel(url: string, filename: string): Promise<THREE.Object3D> {
+        this.materials.length = 0;
         if (/(.(stp|STEP|step)$)/.test(filename!)) {
             console.log(/(.(stp|STEP|step)$)/.exec(filename!)![2]);
             return this.InitOCCT().then(result => {
@@ -101,6 +102,8 @@ export class FileManager {
             })
     }
 
+    private materials: THREE.MeshPhysicalMaterial[] = [];
+
     private CreateModel(res: any, data: any, i = 0, root?: THREE.Object3D): THREE.Object3D {
         i++;
         let obj = new THREE.Object3D();
@@ -119,10 +122,15 @@ export class FileManager {
                     geom.setAttribute('normal', new THREE.Float32BufferAttribute(res.meshes[data.meshes[j]].attributes.normal.array, 3));
                 let index = Uint32Array.from(res.meshes[data.meshes[j]].index.array);
                 geom.setIndex(new THREE.BufferAttribute(index, 1));
-                let mat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.6, metalness: 0.3 });
+                let color = new THREE.Color(0xffffff);
                 if (res.meshes[data.meshes[j]].color != undefined) {
-                    let color = res.meshes[data.meshes[j]].color;
-                    mat.color = new THREE.Color(color[0], color[1], color[2]);
+                    let colorArray = res.meshes[data.meshes[j]].color;
+                    color = new THREE.Color(colorArray[0], colorArray[1], colorArray[2]);
+                }
+                let mat = this.materials.find(m => m.color.getHexString() == color.getHexString());
+                if (mat == undefined) {
+                    mat = new THREE.MeshPhysicalMaterial({ color: color, roughness: 0.6, metalness: 0.3 });
+                    this.materials.push(mat);
                 }
                 let faceColorArray = new Array(geom.attributes['position'].count).fill(0);
                 for (let f = 0; f < res.meshes[data.meshes[j]].brep_faces.length; f++) {

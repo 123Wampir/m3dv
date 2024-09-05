@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { EventEmitter } from "../Event/Event";
 import { ViewType } from "./Appearance";
+import { MaterialManager } from "./MaterialManager";
 
 export enum BoundingType {
     box,
@@ -15,6 +16,8 @@ export enum UpVectorAxis {
 export class ModelManager extends EventEmitter {
     constructor() {
         super()
+
+        this.materialManager = new MaterialManager(this);
     }
 
     override addListener(event: "change", listener: Function): void {
@@ -25,6 +28,7 @@ export class ModelManager extends EventEmitter {
     }
 
     private defaultPositions: Map<THREE.Object3D, THREE.Vector3> = new Map();
+    readonly materialManager: MaterialManager;
 
     private _model: THREE.Object3D = new THREE.Object3D();
     get model() { return this._model; };
@@ -34,7 +38,7 @@ export class ModelManager extends EventEmitter {
         this.model.rotation.x = 0;
         this._upVectorAxis = UpVectorAxis.axisY;
         this.model.position.set(0, 0, 0);
-        this.createUniqueMaterial();
+        this.materialManager.LoadMaterialsFromModel();
         this.moveToCenter();
         this.saveState();
     }

@@ -61,13 +61,29 @@ export class SelectionManager extends EventEmitter {
         this.target.forEach(obj => {
             obj.userData.emissive = (obj as any).material.emissive.getHex();
             (obj as any).material.emissive.setHex(this.SELECTIONCOLOR);
+            obj.renderOrder = -1;
+            obj.onBeforeRender = (r, s, c, g, m, group) => {
+                const material = m as any;
+                if (material.emissive != undefined) {
+                    material.emissive.setHex(this.SELECTIONCOLOR);
+                }
+            }
+            obj.onAfterRender = (r, s, c, g, m, group) => {
+                const material = m as any;
+                if (material.emissive != undefined)
+                    material.emissive.setHex(obj.userData.emissive);
+            }
         });
     }
 
     HideSelected() {
         this.target.forEach(obj => {
-            if (obj.userData.emissive != undefined)
+            obj.renderOrder = 0;
+            if (obj.userData.emissive != undefined) {
+                obj.onBeforeRender = () => { };
+                obj.onAfterRender = () => { };
                 (obj as any).material.emissive.setHex(obj.userData.emissive);
+            }
         });
     }
 

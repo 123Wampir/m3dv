@@ -29,7 +29,6 @@ export class Appearance extends EventEmitter {
         super();
 
         this.viewer = viewer;
-        // viewer.sceneManager.scene.add(this.orthographicCamera);
         this.composer = new EffectComposer(viewer.renderer as THREE.WebGLRenderer);
         this.SetCameraType(CameraType.perspective);
         this.SetCameraPos(new THREE.Vector3(5, 5, 5));

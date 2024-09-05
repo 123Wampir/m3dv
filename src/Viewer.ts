@@ -62,7 +62,7 @@ export class Viewer extends EventEmitter {
 
     LoadModelFile(filename: string, src: string, useWorker = true) {
         if (window.Worker != undefined && useWorker) {
-            this.fileManager.LoadModelInWorker(src, filename,)
+            this.fileManager.LoadModelInWorker(src, filename)
                 .then(e => {
                     this.sceneManager.ClearScene();
                     this.onModelLoaded(e);

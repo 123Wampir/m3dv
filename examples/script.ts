@@ -16,16 +16,17 @@ const yoffset = document.getElementById("planey-offset") as HTMLInputElement;
 const planez = document.getElementById("planez") as HTMLInputElement;
 const zoffset = document.getElementById("planez-offset") as HTMLInputElement;
 
-
-const viewer = new Viewer(canvas);
+const occtImportJsWasmPath = new URL("../libs/occt-import-js/occt-import-js.wasm", import.meta.url).href;
+const viewer = new Viewer(canvas, { occtImportJsWasmPath: occtImportJsWasmPath });
+viewer.appearance.effects.outline = true;
+viewer.addListener("loaded", () => UpdatePlanesMinMax());
 const loadButton = document.getElementById("load-file");
 loadButton!.onchange = (e) => {
     const files = (e.target as any).files;
     if (files.length != 0) {
         const file = files[0] as File;
         const src = URL.createObjectURL(file);
-        viewer.sceneManager.LoadModelFile(file.name, src);
-        viewer.sceneManager.addListener("loaded", () => UpdatePlanesMinMax());
+        viewer.LoadModelFile(file.name, src);
     }
 }
 wireframe.onchange = (e) => {

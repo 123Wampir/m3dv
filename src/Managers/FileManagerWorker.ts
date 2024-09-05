@@ -1,15 +1,11 @@
-import { Object3D } from "three";
-import { FileManager } from "./FileManager";
+import { FileManager, FileManagerOptions } from "./FileManager";
 
 onmessage = async function (e) {
-
-    let obj = new Object3D();
-    let start = Date.now();
-    console.log(e.data);
-    
-    await new FileManager(e.data[0]).LoadModel(e.data[1], e.data[2], obj);
-    let end = Date.now();
-    let diff = (end - start) / 1000;
+    const start = Date.now();
+    const options: FileManagerOptions = JSON.parse(e.data[0]);
+    const obj = await new FileManager(options).LoadModel(e.data[1], e.data[2]);
+    const end = Date.now();
+    const diff = (end - start) / 1000;
     console.log(`elapsed: ${diff} sec`);
     postMessage(obj.toJSON());
 }

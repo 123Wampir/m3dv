@@ -1,9 +1,7 @@
-import { AnimationManager } from "./AnimationManager/AnimationManager";
 import { ModelManager } from "./ModelManager";
 import * as THREE from "three";
-import { FileManager } from "../Managers/FileManager";
 import { EventEmitter } from "../Event/Event";
-import { Plane } from "./Objects/Plate";
+import { Plane } from "./Objects/Plane";
 
 
 export class SceneManager extends EventEmitter {
@@ -12,7 +10,6 @@ export class SceneManager extends EventEmitter {
         this.SetScene(scene);
         this.modelManager = new ModelManager();
         this.scene.add(this.modelManager.model);
-        this.animationManager = new AnimationManager(this);
 
         const dirLight1 = new THREE.DirectionalLight();
         dirLight1.layers.enableAll();
@@ -30,15 +27,9 @@ export class SceneManager extends EventEmitter {
         console.log(scene);
     }
 
-
-    animationManager: AnimationManager;
     modelManager!: ModelManager;
 
     private serviceGroup: THREE.Group = new THREE.Group();
-    readonly fileManager: FileManager = new FileManager();
-
-
-
     private _scene!: THREE.Scene;
 
     get scene() { return this._scene; };
@@ -50,13 +41,11 @@ export class SceneManager extends EventEmitter {
     AddLight(light: THREE.Light) {
         this.lights.push(light);
         this.scene.add(light);
-        this.animationManager.AddTrack(light);
     }
     DeleteLight(light: THREE.Light) {
         light.removeFromParent();
         light.dispose();
-        this.lights = this.lights.filter(item => item.uuid != light.uuid);
-        this.animationManager.DeleteTrack(light);
+        this.lights.splice(this.lights.indexOf(light));
     }
 
     planes: Plane[] = [];
@@ -106,33 +95,8 @@ export class SceneManager extends EventEmitter {
 
     }
 
-    LoadModelFile(filename: string, src: string) {
-        if (window.Worker != undefined) {
-            const worker = new Worker(new URL("./FileManagerWorker", import.meta.url), { type: "module" });
-            worker.postMessage([FileManager.occtimportjsWasmPath, src, filename]);
-            console.log("posted");
-
-            worker.onerror = function (e) { console.log(e); }
-            worker.onmessageerror = function (e) { console.log(e); }
-            worker.onmessage = (e) => {
-                if (this.serviceGroup.children.length > 1)
-                    this.serviceGroup.children[1].removeFromParent();
-                let object = new THREE.ObjectLoader().parse(e.data);
-                this.emit("loaded", object);
-                worker.terminate();
-            };
-        }
-        else {
-            let object = new THREE.Object3D();
-            let start = Date.now();
-            this.fileManager.LoadModel(src, filename, object)
-                .then((e) => {
-                    let end = Date.now();
-                    let diff = (end - start) / 1000;
-                    console.log(`elapsed: ${diff} sec`);
-                    this.emit("loaded", object);
-                })
-                .catch(e => console.log(e))
-        }
+    ClearScene() {
+        if (this.serviceGroup.children.length > 1)
+            this.serviceGroup.children[1].removeFromParent();
     }
 }

@@ -2,60 +2,84 @@ import * as occtimportjs from "occt-import-js";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
+export interface FileManagerOptions {
+    occtimportjsWasmPath?: string
+}
+
 export class FileManager {
 
-    constructor(wasmPath: string = "") {
-        this.SetOCCTImportWasm(wasmPath);
+    constructor(options: FileManagerOptions = null) {
+        this.options = options ?? {};
     }
 
-    static occtimportjsWasmPath: string = "";
-    private static occt: any = undefined;
+    private occt: any = undefined;
 
-    SetOCCTImportWasm(path: string) {
-        FileManager.occtimportjsWasmPath = path;
-    }
+    readonly options: FileManagerOptions = {};
 
-    private static async InitOCCT() {
-        console.log(this.occt);
+    private async InitOCCT() {
         if (this.occt == undefined)
             return occtimportjs.default({
                 locateFile: (name: any) => {
-                    return this.occtimportjsWasmPath;
+                    return this.options.occtimportjsWasmPath;
                 }
             })
         return this.occt;
     }
 
-    async LoadModel(url: string, fileName: string, obj: THREE.Object3D): Promise<boolean> {
-        if (/(.(stp|STEP|step)$)/.test(fileName!)) {
-            console.log(/(.(stp|STEP|step)$)/.exec(fileName!)![2]);
-            return FileManager.InitOCCT().then(result => {
-                FileManager.occt = result;
-                return this.LoadCADModel(url, obj, FileManager.occt.ReadStepFile);
-            })
-        }
-        else if (/(.(iges|igs)$)/.test(fileName!)) {
-            console.log(/(.(iges|igs)$)/.exec(fileName!)![2]);
-            return FileManager.InitOCCT().then(result => {
-                FileManager.occt = result;
-                return this.LoadCADModel(url, obj, FileManager.occt.ReadIgesFile);
-            });
-        }
-        else if (/(.(brep|BREP|BRep|Brep)$)/.test(fileName!)) {
-            console.log(/(.(brep|BREP|BRep|Brep)$)/.exec(fileName!)![2]);
-            return FileManager.InitOCCT().then(result => {
-                FileManager.occt = result;
-                return this.LoadCADModel(url, obj, FileManager.occt.ReadBrepFile);
-            });
-        }
-        else if (/(.(gltf|glb)$)/.test(fileName!)) {
-            console.log(/(.(gltf|glb)$)/.exec(fileName!)![2]);
-            return this.LoadGLTFModel(url, obj);
-        }
-        else return false;
+    async LoadModelInWorker(url: string, filename: string): Promise<THREE.Object3D> {
+        const workerUrl = new URL("./FileManagerWorker", import.meta.url);
+        const worker = new Worker(workerUrl, { type: "module" });
+        return new Promise((resolve, reject) => {
+            worker.onerror = function (e) {
+                console.log(e);
+                worker.terminate();
+                reject(e);
+            }
+            worker.onmessageerror = function (e) {
+                console.log(e);
+                worker.terminate();
+                reject(e);
+            }
+            worker.onmessage = (e) => {
+                worker.terminate();
+                let object = new THREE.ObjectLoader().parse(e.data);
+                resolve(object);
+            }
+            const options = JSON.stringify(this.options);
+            worker.postMessage([options, url, filename]);
+        })
     }
 
-    private async LoadCADModel(url: string, obj: THREE.Object3D, fn: Function): Promise<boolean> {
+    async LoadModel(url: string, filename: string): Promise<THREE.Object3D> {
+        if (/(.(stp|STEP|step)$)/.test(filename!)) {
+            console.log(/(.(stp|STEP|step)$)/.exec(filename!)![2]);
+            return this.InitOCCT().then(result => {
+                this.occt = result;
+                return this.LoadCADModel(url, this.occt.ReadStepFile);
+            })
+        }
+        else if (/(.(iges|igs)$)/.test(filename!)) {
+            console.log(/(.(iges|igs)$)/.exec(filename!)![2]);
+            return this.InitOCCT().then(result => {
+                this.occt = result;
+                return this.LoadCADModel(url, this.occt.ReadIgesFile);
+            });
+        }
+        else if (/(.(brep|BREP|BRep|Brep)$)/.test(filename!)) {
+            console.log(/(.(brep|BREP|BRep|Brep)$)/.exec(filename!)![2]);
+            return this.InitOCCT().then(result => {
+                this.occt = result;
+                return this.LoadCADModel(url, this.occt.ReadBrepFile);
+            });
+        }
+        else if (/(.(gltf|glb)$)/.test(filename!)) {
+            console.log(/(.(gltf|glb)$)/.exec(filename!)![2]);
+            return this.LoadGLTFModel(url);
+        }
+        else return null;
+    }
+
+    private async LoadCADModel(url: string, fn: Function): Promise<THREE.Object3D> {
         return fetch(url)
             .then(response => {
                 return response.arrayBuffer()
@@ -64,17 +88,16 @@ export class FileManager {
                         let result = fn(fileBuffer, null);
                         console.log(result);
                         let model = this.CreateModel(result, result.root);
-                        obj.add(model);
-                        return true;
+                        return model;
                     })
                     .catch(e => {
                         console.log(e);
-                        return false;
+                        return null;
                     })
             })
             .catch(e => {
                 console.log(e);
-                return false;
+                return null;
             })
     }
 
@@ -129,7 +152,7 @@ export class FileManager {
         return root;
     }
 
-    private async LoadGLTFModel(url: string, obj: THREE.Object3D): Promise<boolean> {
+    private async LoadGLTFModel(url: string): Promise<THREE.Object3D> {
         let loader = new GLTFLoader();
         return new Promise((resolve, reject) => {
             loader.loadAsync(
@@ -139,7 +162,7 @@ export class FileManager {
                 }
             ).then(gltf => {
                 if (gltf.scene.children.length != 0) {
-                    obj.add(gltf.scene.children[0].clone());
+                    let obj = gltf.scene.children[0].clone();
                     gltf.scene.traverse(object => {
                         let obj = (object as any);
                         if (obj.geometry != undefined)
@@ -148,12 +171,11 @@ export class FileManager {
                             obj.material.dispose();
                     });
                     obj.updateMatrixWorld(true);
-                    resolve(true);
+                    resolve(obj);
                 }
-                return false;
             }).catch(e => {
                 console.log(e);
-                reject(false);
+                reject(null);
             })
         })
     }

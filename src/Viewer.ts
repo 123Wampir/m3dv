@@ -5,21 +5,29 @@ import { Explode, ExplodeType } from "./Managers/Objects/Explode";
 import { Object3D, Renderer, Scene, WebGLRenderer } from "three";
 import { Appearance, ViewFitType, ViewType } from "./Managers/Appearance";
 import { Controls } from "./Managers/Controls";
+import { FileManager, FileManagerOptions } from "./Managers/FileManager";
+import { EventEmitter } from "./Event/Event";
 
+export interface ViewerOptions {
+    occtImportJsWasmPath?: string
+}
 
-export class Viewer {
-    constructor(canvas: HTMLCanvasElement) {
+export class Viewer extends EventEmitter {
+    constructor(canvas: HTMLCanvasElement, options: ViewerOptions = null) {
+        super();
         this.renderer = new WebGLRenderer({ antialias: true, canvas: canvas, logarithmicDepthBuffer: true });
         this.sceneManager = new SceneManager(new Scene());
         this.appearance = new Appearance(this);
         this.controls = new Controls(this);
-        // document.body.appendChild(this.renderer.domElement)
-        // this.appearance.effects.outline = true;
-
         this.selectionManager = new SelectionManager(this);
 
+        let fileManagerOptions: FileManagerOptions = {};
+        if (options != null) {
+            fileManagerOptions.occtimportjsWasmPath = options.occtImportJsWasmPath;
+        }
+
+        this.fileManager = new FileManager(fileManagerOptions);
         this.sceneManager.modelManager.addListener("change", this.onUpVectorChange);
-        this.sceneManager.addListener("loaded", this.onModelLoaded);
 
         this.stats = new Stats();
         this.renderer.domElement.parentElement?.appendChild(this.stats.dom);
@@ -27,10 +35,11 @@ export class Viewer {
         this.stats.dom.style.left = "";
         this.SetAnimationLoop();
         this.appearance.Resize();
+
+
     }
 
     readonly renderer: Renderer;
-    // private context: WebGLRenderingContext;
 
     readonly appearance: Appearance;
     readonly controls: Controls;
@@ -38,9 +47,39 @@ export class Viewer {
     readonly explodeView: Explode = new Explode();
     readonly sceneManager: SceneManager;
     readonly selectionManager: SelectionManager;
+    readonly fileManager: FileManager;
 
 
     private stats: Stats;
+
+    override emit(event: "loaded", ...any: any): void {
+        super.emit(event, ...any);
+    }
+
+    override addListener(event: "loaded", listener: Function): void {
+        super.addListener(event, listener);
+    }
+
+    LoadModelFile(filename: string, src: string, useWorker = true) {
+        if (window.Worker != undefined && useWorker) {
+            this.fileManager.LoadModelInWorker(src, filename,)
+                .then(e => {
+                    this.sceneManager.ClearScene();
+                    this.onModelLoaded(e);
+                    this.emit("loaded");
+                })
+                .catch(e => console.log(e));
+        }
+        else {
+            this.fileManager.LoadModel(src, filename)
+                .then((e) => {
+                    this.sceneManager.ClearScene();
+                    this.onModelLoaded(e);
+                    this.emit("loaded");
+                })
+                .catch(e => console.log(e));
+        }
+    }
 
     Isolate() {
         if (this.appearance.viewType == ViewType.default) {

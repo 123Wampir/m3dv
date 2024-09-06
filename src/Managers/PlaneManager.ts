@@ -27,9 +27,10 @@ export class PlaneManager extends EventEmitter {
     private _clipIntersection: boolean = false;
     private readonly _included: Set<THREE.Object3D> = new Set();
     get included(): readonly THREE.Object3D[] { return Array.from(this._included.values()); };
-
     get planes(): readonly Plane[] { return this._planes; };
     get clipIntersection() { return this._clipIntersection; };
+
+    private readonly tempMaterials: Map<THREE.Object3D, THREE.Material> = new Map();
 
     Update() {
         if (this._planes.length != 0) {
@@ -69,18 +70,25 @@ export class PlaneManager extends EventEmitter {
         model.traverse(item => {
             if ((item as any).material != undefined) {
                 const mat = (item as any).material as THREE.Material;
-                mat.clippingPlanes = [];
+                if (!this.tempMaterials.has(item)) {
+                    this.tempMaterials.set(item, mat);
+                    (item as any).material = mat.clone();
+                    (item as any).material.clippingPlanes = [];
+                }
             }
             this._included.delete(item);
         });
     }
 
     Include(model: THREE.Object3D) {
-        let threePlanes = this.GetThreePlanes();
         model.traverse(item => {
             if ((item as any).material != undefined) {
-                const mat = (item as any).material as THREE.Material;
-                mat.clippingPlanes = threePlanes;
+                if (this.tempMaterials.has(item)) {
+                    const mat = (item as any).material as THREE.Material;
+                    (item as any).material = this.tempMaterials.get(item);
+                    this.tempMaterials.delete(item);
+                    mat.dispose();
+                }
             }
             this._included.add(item);
         });

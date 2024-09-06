@@ -1,4 +1,4 @@
-import { Box3, Color, Object3D, Raycaster, Sphere, Vector2 } from "three";
+import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js"
 import type { Viewer } from "../Viewer";
 import { type SceneManager } from "./SceneManager";
@@ -11,7 +11,7 @@ export class SelectionManager extends EventEmitter {
         super();
         this.sceneManager = viewer.sceneManager;
         this.viewer = viewer;
-        this.SELECTIONCOLOR = color;
+        this._selectionColor = new THREE.Color(color);
         this.transformControls = new TransformControls(this.viewer.appearance.camera, this.viewer.renderer.domElement);
         this.transformControls.setSpace("local");
         viewer.sceneManager.scene.add(this.transformControls);
@@ -24,14 +24,17 @@ export class SelectionManager extends EventEmitter {
         });
         this.viewer.renderer.domElement.addEventListener("click", e => this.onClickCallback(e));
     }
-    selectionEnabled = false;
+    private selectionEnabled = false;
     private readonly viewer: Viewer;
-    sceneManager: SceneManager;
-    transformControls: TransformControls;
+    private readonly sceneManager: SceneManager;
+    private readonly transformControls: TransformControls;
     selectMany = false;
-    filters: string[] = [];
-    target: Object3D[] = [];
-    SELECTIONCOLOR = 0xff0000;
+    readonly filters: string[] = [];
+    private readonly _target: THREE.Object3D[] = [];
+    private _selectionColor: THREE.Color;
+
+    get selectionColor() { return this._selectionColor; };
+    get target(): readonly THREE.Object3D[] { return this._target; };
 
     override addListener(event: "change", listener: Function): void {
         super.addListener(event, listener);
@@ -40,32 +43,32 @@ export class SelectionManager extends EventEmitter {
         super.emit(event, ...any);
     }
 
-    Select(object?: Object3D) {
+    Select(object?: THREE.Object3D) {
         if (!this.selectMany) {
-            this.target.length = 0;
+            this._target.length = 0;
         }
         if (object != undefined) {
             if (this.filters.includes(object.type) || this.filters.length == 0) {
-                let index = this.target.findIndex(obj => obj.uuid == object.uuid);
+                let index = this._target.findIndex(obj => obj.uuid == object.uuid);
                 if (index == -1) {
-                    this.target.push(object);
+                    this._target.push(object);
                 }
                 else {
-                    this.target.splice(index, 1);
+                    this._target.splice(index, 1);
                 }
             }
         }
-        this.emit("change", this.target);
+        this.emit("change", this._target);
     }
     ShowSelected() {
-        this.target.forEach(obj => {
+        this._target.forEach(obj => {
             obj.userData.emissive = (obj as any).material.emissive.getHex();
-            (obj as any).material.emissive.setHex(this.SELECTIONCOLOR);
+            (obj as any).material.emissive.setHex(this.selectionColor.getHex());
             obj.renderOrder = -1;
             obj.onBeforeRender = (r, s, c, g, m, group) => {
                 const material = m as any;
                 if (material.emissive != undefined) {
-                    material.emissive.setHex(this.SELECTIONCOLOR);
+                    material.emissive.setHex(this.selectionColor.getHex());
                 }
             }
             obj.onAfterRender = (r, s, c, g, m, group) => {
@@ -77,7 +80,7 @@ export class SelectionManager extends EventEmitter {
     }
 
     HideSelected() {
-        this.target.forEach(obj => {
+        this._target.forEach(obj => {
             obj.renderOrder = 0;
             if (obj.userData.emissive != undefined) {
                 obj.onBeforeRender = () => { };
@@ -87,7 +90,7 @@ export class SelectionManager extends EventEmitter {
         });
     }
 
-    GetBounding(type: BoundingType): Box3 | Sphere {
+    GetBounding(type: BoundingType): THREE.Box3 | THREE.Sphere {
         switch (type) {
             case BoundingType.box:
                 return this.GetBoundingBox();
@@ -96,33 +99,33 @@ export class SelectionManager extends EventEmitter {
         }
     }
 
-    private GetBoundingBox(): Box3 {
-        const box3 = new Box3();
-        this.target.forEach(object => {
-            const box = new Box3().setFromObject(object);
+    private GetBoundingBox(): THREE.Box3 {
+        const box3 = new THREE.Box3();
+        this._target.forEach(object => {
+            const box = new THREE.Box3().setFromObject(object);
             box3.union(box);
         })
         return box3;
     }
 
-    private GetBoundingSphere(): Sphere {
-        const box3 = new Box3();
-        this.target.forEach(object => {
-            const box = new Box3().setFromObject(object);
+    private GetBoundingSphere(): THREE.Sphere {
+        const box3 = new THREE.Box3();
+        this._target.forEach(object => {
+            const box = new THREE.Box3().setFromObject(object);
             box3.union(box);
         })
-        const sphere = new Sphere;
+        const sphere = new THREE.Sphere;
         return box3.getBoundingSphere(sphere);
     }
 
     SetSelectionColor(color: number | string) {
-        this.SELECTIONCOLOR = new Color(color).getHex();
+        this._selectionColor = new THREE.Color(color);
         this.HideSelected();
         this.ShowSelected();
     }
 
     private onClickCallback(event: MouseEvent) {
-        const pointer = new Vector2();
+        const pointer = new THREE.Vector2();
         pointer.x = (event.offsetX / this.viewer.renderer.domElement.clientWidth) * 2 - 1;
         pointer.y = - (event.offsetY / this.viewer.renderer.domElement.clientHeight) * 2 + 1;
         this.selectMany = event.shiftKey;
@@ -134,8 +137,8 @@ export class SelectionManager extends EventEmitter {
         this.viewer.appearance.Render();
     }
 
-    private FindIntersection(pointer: Vector2): Object3D | undefined {
-        let raycaster = new Raycaster();
+    private FindIntersection(pointer: THREE.Vector2): THREE.Object3D | undefined {
+        let raycaster = new THREE.Raycaster();
         if (this.viewer.appearance.viewType == ViewType.isolated)
             raycaster.layers.set(1);
         raycaster.setFromCamera(pointer, this.viewer.appearance.camera);

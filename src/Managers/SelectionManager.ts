@@ -25,7 +25,7 @@ export class SelectionManager extends EventEmitter {
         this.viewer.renderer.domElement.addEventListener("click", e => this.onClickCallback(e));
     }
     selectionEnabled = false;
-    viewer: Viewer;
+    private readonly viewer: Viewer;
     sceneManager: SceneManager;
     transformControls: TransformControls;
     selectMany = false;

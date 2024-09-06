@@ -16,7 +16,8 @@ export class Viewer extends EventEmitter {
     constructor(canvas: HTMLCanvasElement, options: ViewerOptions = null) {
         super();
         this.renderer = new WebGLRenderer({ antialias: true, canvas: canvas, logarithmicDepthBuffer: true });
-        this.sceneManager = new SceneManager(new Scene());
+        (this.renderer as WebGLRenderer).localClippingEnabled = true;
+        this.sceneManager = new SceneManager(this);
         this.appearance = new Appearance(this);
         this.controls = new Controls(this);
         this.selectionManager = new SelectionManager(this);
@@ -35,8 +36,6 @@ export class Viewer extends EventEmitter {
         this.stats.dom.style.left = "";
         this.SetAnimationLoop();
         this.appearance.Resize();
-
-
     }
 
     readonly renderer: Renderer;
@@ -64,7 +63,7 @@ export class Viewer extends EventEmitter {
         if (window.Worker != undefined && useWorker) {
             this.fileManager.LoadModelInWorker(src, filename)
                 .then(e => {
-                    this.sceneManager.ClearScene();
+                    this.sceneManager.Clear();
                     this.onModelLoaded(e);
                     this.emit("loaded");
                 })
@@ -73,7 +72,7 @@ export class Viewer extends EventEmitter {
         else {
             this.fileManager.LoadModel(src, filename)
                 .then((e) => {
-                    this.sceneManager.ClearScene();
+                    this.sceneManager.Clear();
                     this.onModelLoaded(e);
                     this.emit("loaded");
                 })
@@ -123,7 +122,7 @@ export class Viewer extends EventEmitter {
 
     private onUpVectorChange = () => {
         this.explodeView.InitExplode(this.sceneManager.modelManager.model, this.explodeView.type);
-        this.sceneManager.planes.forEach(plane => plane.Update());
+        this.sceneManager.planeManager.planes.forEach(plane => plane.Update());
         this.appearance.Render();
     }
 
@@ -131,13 +130,8 @@ export class Viewer extends EventEmitter {
         console.log((this.renderer as WebGLRenderer).info.memory);
         this.sceneManager.modelManager.SetModel(object);
         this.appearance.Reset();
-        this.EnableClipping();
-        this.sceneManager.InitPlanes();
+        this.sceneManager.planeManager.Update();
         this.explodeView.InitExplode(object, ExplodeType.phased);
         this.appearance.FitInView(ViewFitType.model);
-    }
-
-    EnableClipping() {
-        (this.renderer as WebGLRenderer).localClippingEnabled = true;
     }
 }

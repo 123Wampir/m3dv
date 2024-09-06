@@ -16,7 +16,6 @@ export enum UpVectorAxis {
 export class ModelManager extends EventEmitter {
     constructor() {
         super()
-
         this.materialManager = new MaterialManager(this);
     }
 
@@ -27,9 +26,8 @@ export class ModelManager extends EventEmitter {
         super.emit(event, ...any);
     }
 
-    private defaultPositions: Map<THREE.Object3D, THREE.Vector3> = new Map();
     readonly materialManager: MaterialManager;
-
+    private defaultPositions: Map<THREE.Object3D, THREE.Vector3> = new Map();
     private _model: THREE.Object3D = new THREE.Object3D();
     get model() { return this._model; };
     SetModel(model: THREE.Object3D) {

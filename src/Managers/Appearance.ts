@@ -46,8 +46,6 @@ export class Appearance extends EventEmitter {
     readonly effects: Effects;
     readonly enviroment: Enviroment;
 
-    renderEffects: boolean = true;
-
     private _hideSmallPartsOnCameraMove: boolean = false;
     get hideSmallPartsOnCameraMove() { return this._hideSmallPartsOnCameraMove; };
     set hideSmallPartsOnCameraMove(value: boolean) {
@@ -57,8 +55,6 @@ export class Appearance extends EventEmitter {
             this.viewer.controls.addListener("end", (e) => this._onend());
         }
         else {
-            console.log("");
-
             this._smallParts.clear();
             this.viewer.controls.removeListener("start", (e) => this._onstart());
             this.viewer.controls.removeListener("change", (e) => this._onchange());
@@ -99,11 +95,10 @@ export class Appearance extends EventEmitter {
     private _wireframe: boolean = false;
     get wireframe() { return this._wireframe; };
     set wireframe(value: boolean) {
-        this.viewer.sceneManager.modelManager.model.traverse(object => {
-            let obj = object as any;
-            if (obj.material != undefined) {
-                obj.material.wireframe = value;
-            }
+        this.viewer.sceneManager.modelManager.materialManager.GetMaterials().forEach(mat => {
+            const material = mat as any;
+            if (material.wireframe != undefined)
+                material.wireframe = value;
         })
         this._wireframe = value;
     }

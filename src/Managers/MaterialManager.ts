@@ -29,6 +29,10 @@ export class MaterialManager extends EventEmitter {
         return this.materials.has(material);
     }
 
+    GetMaterials(): readonly THREE.Material[] {
+        return Array.from(this.materials.values());
+    }
+
     AddMaterial(material: THREE.Material) {
         if (!this.materials.has(material))
             this.materials.add(material);
@@ -51,6 +55,7 @@ export class MaterialManager extends EventEmitter {
     }
 
     ReplaceMaterial(oldMaterial: THREE.Material, newMaterial: THREE.Material) {
+        this.AddMaterial(newMaterial);
         this.modelManager.model.traverse(object => {
             const obj = object as any;
             if (obj.material != undefined) {

@@ -16,6 +16,10 @@ const yoffset = document.getElementById("planey-offset") as HTMLInputElement;
 const planez = document.getElementById("planez") as HTMLInputElement;
 const zoffset = document.getElementById("planez-offset") as HTMLInputElement;
 
+const intersection = document.getElementById("intersection") as HTMLInputElement;
+const include = document.getElementById("include");
+const exclude = document.getElementById("exclude");
+
 const occtImportJsWasmPath = new URL("../libs/occt-import-js/occt-import-js.wasm", import.meta.url).href;
 const viewer = new Viewer(canvas, { occtImportJsWasmPath: occtImportJsWasmPath });
 viewer.appearance.effects.outline = true;
@@ -45,37 +49,48 @@ controls.onchange = (e) => {
 }
 planex.onchange = (e) => {
     const value = (e.target as any).checked as boolean;
-    viewer.sceneManager.planes[0].SetVisibility(value);
+    viewer.sceneManager.planeManager.planes[0].SetVisibility(value);
 }
 xoffset.onchange = (e) => {
     const value = (e.target as any).value as number;
-    viewer.sceneManager.planes[0].SetOffset(value);
+    viewer.sceneManager.planeManager.planes[0].SetOffset(value);
 }
 planey.onchange = (e) => {
     const value = (e.target as any).checked as boolean;
-    viewer.sceneManager.planes[1].SetVisibility(value);
+    viewer.sceneManager.planeManager.planes[1].SetVisibility(value);
 }
 yoffset.onchange = (e) => {
     const value = (e.target as any).value as number;
-    viewer.sceneManager.planes[1].SetOffset(value);
+    viewer.sceneManager.planeManager.planes[1].SetOffset(value);
 }
 planez.onchange = (e) => {
     const value = (e.target as any).checked as boolean;
-    viewer.sceneManager.planes[2].SetVisibility(value);
+    viewer.sceneManager.planeManager.planes[2].SetVisibility(value);
 }
 zoffset.onchange = (e) => {
     const value = (e.target as any).value as number;
-    viewer.sceneManager.planes[2].SetOffset(value);
+    viewer.sceneManager.planeManager.planes[2].SetOffset(value);
+}
+intersection.onchange = (e) => {
+    const value = (e.target as any).checked as boolean;
+    viewer.sceneManager.planeManager.ClipIntersection(value);
+}
+include!.onclick = (e) => {
+    viewer.selectionManager.target.forEach(t => viewer.sceneManager.planeManager.Include(t));
+}
+exclude!.onclick = (e) => {
+    // console.log(viewer.selectionManager.target);
+    viewer.selectionManager.target.forEach(t => viewer.sceneManager.planeManager.Exclude(t));
 }
 
 
 function UpdatePlanesMinMax() {
-    xoffset.min = (viewer.sceneManager.planes[0].min - 1e-6).toString();
-    xoffset.max = (viewer.sceneManager.planes[0].max + 1e-6).toString();
-    yoffset.min = (viewer.sceneManager.planes[1].min - 1e-6).toString();
-    yoffset.max = (viewer.sceneManager.planes[1].max + 1e-6).toString();
-    zoffset.min = (viewer.sceneManager.planes[2].min - 1e-6).toString();
-    zoffset.max = (viewer.sceneManager.planes[2].max + 1e-6).toString();
+    xoffset.min = (viewer.sceneManager.planeManager.planes[0].min - 1e-6).toString();
+    xoffset.max = (viewer.sceneManager.planeManager.planes[0].max + 1e-6).toString();
+    yoffset.min = (viewer.sceneManager.planeManager.planes[1].min - 1e-6).toString();
+    yoffset.max = (viewer.sceneManager.planeManager.planes[1].max + 1e-6).toString();
+    zoffset.min = (viewer.sceneManager.planeManager.planes[2].min - 1e-6).toString();
+    zoffset.max = (viewer.sceneManager.planeManager.planes[2].max + 1e-6).toString();
     xoffset.step = 1e-6.toString();
     yoffset.step = 1e-6.toString();
     zoffset.step = 1e-6.toString();

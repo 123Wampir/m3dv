@@ -1,26 +1,20 @@
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { PlaneManager } from "../PlaneManager"
 import * as THREE from "three";
+import { EventEmitter } from '../../Event/Event';
 
-export class Plane {
-    constructor(name: string, plane: THREE.Plane, model: THREE.Object3D) {
+export class Plane extends EventEmitter {
+    constructor(planeManager: PlaneManager, name: string, plane: THREE.Plane) {
+        super();
         this.name = name;
         this.plane = plane;
-        Plane.PLANES.push(this);
-
-        Plane.model = model;
-
+        this.planeManager = planeManager;
         this.helper = new THREE.PlaneHelper(this.plane);
         this.helper.visible = false;
+        this._order = this.planeManager.planes.length + 1;
 
-
-        this.order = Plane.ORDERS++;
-
-        Plane.map.repeat = new THREE.Vector2(256, 256);
-        Plane.map.wrapS = THREE.RepeatWrapping;
-        Plane.map.wrapT = THREE.RepeatWrapping;
         const planeMat = new THREE.MeshBasicMaterial({
-            // color: 0xfff000,
-            map: Plane.map,
+            color: 0xfff000,
             stencilWrite: true,
             stencilRef: 0,
             stencilFunc: THREE.NotEqualStencilFunc,
@@ -30,7 +24,6 @@ export class Plane {
         });
         const planeGeom = new THREE.PlaneGeometry();
         this.cutPlane = new THREE.Mesh(planeGeom, planeMat);
-        Plane.CUTPLANES.push(this.cutPlane);
 
         this.cutPlane.onBeforeRender = () => {
             plane.coplanarPoint(this.cutPlane.position);
@@ -45,69 +38,74 @@ export class Plane {
         }
         this.cutPlane.renderOrder = this.order + 0.1;
         this.SetVisibility(false);
-
-        Plane.Include(model);
         this.Update();
     }
-    name: string;
-    plane: THREE.Plane;
-    cutPlane: THREE.Mesh;
-    stencilGroup: THREE.Group = new THREE.Group();
-    helper: THREE.PlaneHelper;
-    min: number = 0;
-    max: number = 0;
-    order: number;
-    private visible = false;
-    static model: THREE.Object3D;
-    static ORDERS: number = 0;
-    static PLANES: Plane[] = [];
-    static CUTPLANES: THREE.Mesh[] = [];
-    static map = new THREE.TextureLoader().load("/src/assets/test.jpg");
-    static included: Map<THREE.Object3D, boolean> = new Map();
-    static clipIntersection: boolean = false;
+    readonly name: string;
+    private readonly planeManager: PlaneManager;
+    readonly plane: THREE.Plane;
+    readonly cutPlane: THREE.Mesh;
+    readonly stencilGroup: THREE.Group = new THREE.Group();
+    readonly helper: THREE.PlaneHelper;
+
+    private _min: number = 0;
+    private _max: number = 0;
+    private _order: number = 0;
+    private _visible = false;
+    get min() { return this._min; };
+    get max() { return this._max; };
+    get order() { return this._order; };
+    get visible() { return this._visible; }
+
+    override addListener(event: "change", listener: Function): void {
+        super.addListener(event, listener);
+    }
+    override emit(event: "change", ...any: any): void {
+        super.emit(event, ...any);
+    }
 
     SetVisibility(visible: boolean) {
-        this.visible = visible;
+        this._visible = visible;
         this.cutPlane.visible = visible;
         this.stencilGroup.visible = visible;
 
-        const threePlanes = Plane.getPlanes();
+        const threePlanes = this.planeManager.GetThreePlanes();
 
-        if (!Plane.clipIntersection)
-            Plane.PLANES.forEach(plane => {
+        if (!this.planeManager.clipIntersection)
+            this.planeManager.planes.forEach(plane => {
                 (plane.cutPlane.material as THREE.Material).clippingPlanes =
                     threePlanes.filter((p) => p != plane.plane);
             })
-        Plane.included.forEach((include, item) => {
-            if (include) {
-                const obj = (item as any);
-                if (obj.material != undefined) {
-                    (obj.material as THREE.Material).clippingPlanes = threePlanes;
-                }
+        this.planeManager.included.forEach(item => {
+            const obj = (item as any);
+            if (obj.material != undefined) {
+                (obj.material as THREE.Material).clippingPlanes = threePlanes;
             }
         })
+        this.emit("change");
     }
 
     Invert() {
         this.plane.negate();
-        this.min /= -1;
-        this.max /= -1;
+        this._min /= -1;
+        this._max /= -1;
         const max = this.max;
-        this.max = this.min;
-        this.min = max;
+        this._max = this.min;
+        this._min = max;
+        this.emit("change");
     }
 
     SetOffset(offset: number) {
         this.plane.constant = offset;
+        this.emit("change");
     }
 
     Update() {
-        const box = new THREE.Box3().setFromObject(Plane.model);
+        const box = new THREE.Box3().setFromObject(this.planeManager.GetModel());
         const size = box.getBoundingSphere(new THREE.Sphere()).radius * 2;
         const center = box.getBoundingSphere(new THREE.Sphere()).center;
 
-        this.min = -box.min.clone().multiply(this.plane.normal).length() - 1e-6;
-        this.max = box.max.clone().multiply(this.plane.normal).length() + 1e-6;
+        this._min = -box.min.clone().multiply(this.plane.normal).length() - 1e-6;
+        this._max = box.max.clone().multiply(this.plane.normal).length() + 1e-6;
 
         this.stencilGroup.traverse(item => {
             if ((item as any).geometry != undefined) {
@@ -144,72 +142,20 @@ export class Plane {
         this.helper.dispose();
     }
 
-    static Exclude(model: THREE.Object3D) {
-        model.traverse(item => {
-            if ((item as any).material != undefined) {
-                const mat = (item as any).material as THREE.Material;
-                mat.clippingPlanes = [];
-            }
-            Plane.included.set(item, false);
-        });
-    }
-
-    static Include(model: THREE.Object3D) {
-        let threePlanes = this.getPlanes();
-        model.traverse(item => {
-            if ((item as any).material != undefined) {
-                const mat = (item as any).material as THREE.Material;
-                mat.clippingPlanes = threePlanes;
-            }
-            Plane.included.set(item, true);
-        });
-    }
-
-    static ClipIntersection(value: boolean) {
-        this.model.traverse(item => {
-            if ((item as any).material != undefined) {
-                const mat = (item as any).material as THREE.Material;
-                mat.clipIntersection = value;
-            }
-        })
-
-        const threePlanes = this.getPlanes();
-
-        this.PLANES.forEach(plane => {
-            const mat = plane.cutPlane.material as THREE.Material;
-            if (value)
-                mat.clippingPlanes = [];
-            else {
-                mat.clippingPlanes =
-                    threePlanes.filter((p) => p != plane.plane);
-            }
-        })
-
-        this.clipIntersection = value;
-    }
-
-    private static getPlanes() {
-        const planes = Plane.PLANES.filter(plane => plane.visible == true);
-        const threePlanes: THREE.Plane[] = [];
-        planes.forEach(plane => threePlanes.push(plane.plane));
-        return threePlanes;
-    }
-
     private createStencilMesh(): THREE.Group {
         var geometries: THREE.BufferGeometry[] = [];
-        Plane.included.forEach((include, item) => {
-            if (include)
-                if ((item as any).geometry != undefined) {
-                    var geom = (item as any).geometry as THREE.BufferGeometry;
-                    geom = geom.clone();
-                    item.updateMatrixWorld(true);
-                    geom.applyMatrix4(item.matrixWorld);
-                    if (geom.index != null)
-                        geom = geom.toNonIndexed();
-                    if (geom.hasAttribute("color"))
-                        geom.deleteAttribute("color");
-                    geometries.push(geom);
-                }
+        this.planeManager.included.forEach(item => {
+            if ((item as any).geometry != undefined) {
+                var geom = (item as any).geometry as THREE.BufferGeometry;
+                geom = geom.clone();
+                item.updateMatrixWorld(true);
+                geom.applyMatrix4(item.matrixWorld);
+                if (geom.index != null)
+                    geom = geom.toNonIndexed();
+                if (geom.hasAttribute("color"))
+                    geom.deleteAttribute("color");
+                geometries.push(geom);
+            }
         })
         var geometry = BufferGeometryUtils.mergeGeometries(geometries);
         geometries.forEach(item => item.dispose());

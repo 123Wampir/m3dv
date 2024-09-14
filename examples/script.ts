@@ -1,6 +1,10 @@
+import { UnrealBloomPass } from "three/examples/jsm/Addons.js";
 import { CameraType } from "../src/Managers/Appearance";
 import { ControlsType } from "../src/Managers/Controls";
+import { Effect } from "../src/Managers/Effects/Effect";
+import { OutlineEffect } from "../src/Managers/Effects/OutlineEffect";
 import { Viewer } from "../src/Viewer";
+import { Vector2 } from "three";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const wireframe = document.getElementById("wireframe") as HTMLInputElement;
@@ -22,7 +26,9 @@ const exclude = document.getElementById("exclude");
 
 const occtImportJsWasmPath = new URL("../libs/occt-import-js/occt-import-js.wasm", import.meta.url).href;
 const viewer = new Viewer(canvas, { occtImportJsWasmPath: occtImportJsWasmPath });
-viewer.appearance.effects.outline = true;
+viewer.appearance.enviroment.SetBackgroundColor(0x000000);
+viewer.appearance.effects.AddEffect(new Effect("bloom", new UnrealBloomPass(new Vector2(window.innerWidth, window.innerHeight), 0.8, 0.05, 0.25)));
+viewer.appearance.effects.AddEffect(new OutlineEffect(viewer));
 viewer.addListener("loaded", () => UpdatePlanesMinMax());
 const loadButton = document.getElementById("load-file");
 loadButton!.onchange = (e) => {

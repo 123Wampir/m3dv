@@ -2,7 +2,7 @@ import { ModelManager } from "./ModelManager";
 import * as THREE from "three";
 import { EventEmitter } from "../Event/Event";
 import { Viewer } from "../Viewer";
-import { PlaneManager } from "./PlaneManager";
+import { PlaneManager } from "./Planes/PlaneManager";
 
 
 export class SceneManager extends EventEmitter {

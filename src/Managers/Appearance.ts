@@ -4,9 +4,10 @@ import { EffectComposer, OutputPass } from "three/examples/jsm/Addons.js";
 import { Enviroment } from "./Objects/Enviroment";
 import { Viewer } from "../Viewer";
 import { ControlsType } from "./Controls";
-import { Effects, MyRenderPass } from "./Effects";
+import { Effects } from "./Effects/Effects";
 import { ComputeVolume } from "../Utils/Math";
 import { BoundingType } from "./ModelManager";
+import { RenderPass } from "./Effects/Passes/RenderPass";
 
 export enum ViewType {
     default,
@@ -37,12 +38,12 @@ export class Appearance extends EventEmitter {
         this.enviroment = new Enviroment(viewer);
         this.enviroment.SetBackgroundColor();
 
-        this.effects = new Effects(viewer);
+        this.effects = new Effects(this.composer);
         window.addEventListener("resize", () => this.Resize());
     }
     private readonly viewer: Viewer;
 
-    readonly composer: EffectComposer;
+    private readonly composer: EffectComposer;
     readonly effects: Effects;
     readonly enviroment: Enviroment;
 
@@ -120,7 +121,7 @@ export class Appearance extends EventEmitter {
     }
 
     private _addDefaultPasses() {
-        const renderPass = new MyRenderPass(this.viewer);
+        const renderPass = new RenderPass(this.viewer);
         const outputPass = new OutputPass();
         this.composer.addPass(renderPass);
         this.composer.addPass(outputPass);

@@ -1,6 +1,6 @@
-import { EventEmitter } from "../Event/Event";
-import { Plane } from "./Objects/Plane";
-import { SceneManager } from "./SceneManager";
+import { EventEmitter } from "../../Event/Event";
+import { Plane } from "./Plane";
+import { SceneManager } from "../SceneManager";
 import * as THREE from "three";
 
 

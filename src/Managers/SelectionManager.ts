@@ -62,7 +62,8 @@ export class SelectionManager extends EventEmitter {
     }
     ShowSelected() {
         this._target.forEach(obj => {
-            obj.userData.emissive = (obj as any).material.emissive.getHex();
+            if ((obj as any).material.userData.emissive == undefined)
+                (obj as any).material.userData.emissive = (obj as any).material.emissive.getHex();
             (obj as any).material.emissive.setHex(this.selectionColor.getHex());
             obj.renderOrder = -1;
             obj.onBeforeRender = (r, s, c, g, m, group) => {
@@ -74,7 +75,7 @@ export class SelectionManager extends EventEmitter {
             obj.onAfterRender = (r, s, c, g, m, group) => {
                 const material = m as any;
                 if (material.emissive != undefined)
-                    material.emissive.setHex(obj.userData.emissive);
+                    material.emissive.setHex((obj as any).material.userData.emissive);
             }
         });
     }
@@ -82,10 +83,12 @@ export class SelectionManager extends EventEmitter {
     HideSelected() {
         this._target.forEach(obj => {
             obj.renderOrder = 0;
-            if (obj.userData.emissive != undefined) {
+            if ((obj as any).material.userData.emissive != undefined) {
+                (obj as any).material.emissive.setHex((obj as any).material.userData.emissive);
+                console.log((obj as any).material.userData.emissive);
                 obj.onBeforeRender = () => { };
                 obj.onAfterRender = () => { };
-                (obj as any).material.emissive.setHex(obj.userData.emissive);
+
             }
         });
     }

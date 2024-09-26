@@ -2,7 +2,7 @@ import { SceneManager } from "./Managers/SceneManager";
 import { SelectionManager } from "./Managers/SelectionManager";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { Explode, ExplodeType } from "./Managers/Objects/Explode";
-import { Object3D, Renderer, Scene, WebGLRenderer } from "three";
+import { Object3D, Renderer, Scene, WebGLRenderer, ObjectLoader } from "three";
 import { Appearance, ViewFitType, ViewType } from "./Managers/Appearance";
 import { Controls } from "./Managers/Controls";
 import { FileManager, FileManagerOptions } from "./Managers/FileManager";
@@ -57,6 +57,17 @@ export class Viewer extends EventEmitter {
 
     override addListener(event: "loaded", listener: Function): void {
         super.addListener(event, listener);
+    }
+
+    LoadModelFromJson(modelJson: string) {
+        const loader = new ObjectLoader();
+        const model = loader.parse(JSON.parse(modelJson)) as Scene;
+        this.onModelLoaded(model);
+    }
+
+    ExportModelAsJson(): string {
+        const json = JSON.stringify(this.sceneManager.modelManager.model.toJSON());
+        return json;
     }
 
     LoadModelFile(filename: string, src: string, useWorker = true) {
@@ -129,9 +140,13 @@ export class Viewer extends EventEmitter {
     private onModelLoaded = (object: Object3D) => {
         console.log((this.renderer as WebGLRenderer).info.memory);
         this.sceneManager.modelManager.SetModel(object);
+        this.resetScene();
+    }
+
+    private resetScene() {
         this.appearance.Reset();
         this.sceneManager.planeManager.Update();
-        this.explodeView.InitExplode(object, ExplodeType.phased);
+        this.explodeView.InitExplode(this.sceneManager.modelManager.model, ExplodeType.phased);
         this.appearance.FitInView(ViewFitType.model);
     }
 }

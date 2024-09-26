@@ -1,5 +1,5 @@
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { PlaneManager } from "../PlaneManager"
+import { PlaneManager } from "./PlaneManager"
 import * as THREE from "three";
 import { EventEmitter } from '../../Event/Event';
 

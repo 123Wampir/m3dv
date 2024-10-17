@@ -30,11 +30,11 @@ export class SelectionManager extends EventEmitter {
     private readonly transformControls: TransformControls;
     selectMany = false;
     readonly filters: string[] = [];
-    private readonly _target: THREE.Object3D[] = [];
+    private readonly _target: Set<THREE.Object3D> = new Set();
     private _selectionColor: THREE.Color;
 
     get selectionColor() { return this._selectionColor; };
-    get target(): readonly THREE.Object3D[] { return this._target; };
+    get target(): readonly THREE.Object3D[] { return Array.from(this._target); };
 
     override addListener(event: "change", listener: Function): void {
         super.addListener(event, listener);
@@ -45,52 +45,51 @@ export class SelectionManager extends EventEmitter {
 
     Select(object?: THREE.Object3D) {
         if (!this.selectMany) {
-            this._target.length = 0;
+            this._target.clear();
         }
         if (object != undefined) {
-            if (this.filters.includes(object.type) || this.filters.length == 0) {
-                let index = this._target.findIndex(obj => obj.uuid == object.uuid);
-                if (index == -1) {
-                    this._target.push(object);
-                }
-                else {
-                    this._target.splice(index, 1);
-                }
+            if (this._target.has(object)) {
+                this._target.delete(object);
+            }
+            else {
+                this._target.add(object);
             }
         }
         this.emit("change", this._target);
     }
     ShowSelected() {
-        this._target.forEach(obj => {
-            if ((obj as any).material.userData.emissive == undefined)
-                (obj as any).material.userData.emissive = (obj as any).material.emissive.getHex();
-            (obj as any).material.emissive.setHex(this.selectionColor.getHex());
-            obj.renderOrder = -1;
-            obj.onBeforeRender = (r, s, c, g, m, group) => {
+        this._target.forEach(obj => obj.traverse(item => {
+            if ((item as any).material == undefined)
+                return;
+            if ((item as any).material.userData.emissive == undefined)
+                (item as any).material.userData.emissive = (item as any).material.emissive.getHex();
+            (item as any).material.emissive.setHex(this.selectionColor.getHex());
+            item.renderOrder = -1;
+            item.onBeforeRender = (r, s, c, g, m, group) => {
                 const material = m as any;
                 if (material.emissive != undefined) {
                     material.emissive.setHex(this.selectionColor.getHex());
                 }
             }
-            obj.onAfterRender = (r, s, c, g, m, group) => {
+            item.onAfterRender = (r, s, c, g, m, group) => {
                 const material = m as any;
                 if (material.emissive != undefined)
-                    material.emissive.setHex((obj as any).material.userData.emissive);
+                    material.emissive.setHex((item as any).material.userData.emissive);
             }
-        });
+        }));
     }
 
     HideSelected() {
-        this._target.forEach(obj => {
-            obj.renderOrder = 0;
-            if ((obj as any).material.userData.emissive != undefined) {
-                (obj as any).material.emissive.setHex((obj as any).material.userData.emissive);
-                console.log((obj as any).material.userData.emissive);
-                obj.onBeforeRender = () => { };
-                obj.onAfterRender = () => { };
-
+        this._target.forEach(obj => obj.traverse(item => {
+            if ((item as any).material == undefined)
+                return;
+            item.renderOrder = 0;
+            if ((item as any).material.userData.emissive != undefined) {
+                (item as any).material.emissive.setHex((item as any).material.userData.emissive);
+                item.onBeforeRender = () => { };
+                item.onAfterRender = () => { };
             }
-        });
+        }));
     }
 
     GetBounding(type: BoundingType): THREE.Box3 | THREE.Sphere {

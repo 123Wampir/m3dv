@@ -34,6 +34,7 @@ export class Viewer extends EventEmitter {
         this.renderer.domElement.parentElement?.appendChild(this.stats.dom);
         this.stats.dom.style.right = "0";
         this.stats.dom.style.left = "";
+        this.showStats = false;
         this.SetAnimationLoop();
         this.appearance.Resize();
     }
@@ -48,7 +49,15 @@ export class Viewer extends EventEmitter {
     readonly selectionManager: SelectionManager;
     readonly fileManager: FileManager;
 
-
+    private _showStats: boolean = true;
+    get showStats() { return this._showStats; };
+    set showStats(value: boolean) {
+        this._showStats = value;
+        if (value) {
+            this.stats.dom.style.display = "block";
+        }
+        else { this.stats.dom.style.display = "none"; }
+    };
     private stats: Stats;
 
     override emit(event: "loaded", ...any: any): void {

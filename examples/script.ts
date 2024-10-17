@@ -25,7 +25,7 @@ const exclude = document.getElementById("exclude");
 
 const occtImportJsWasmPath = new URL("../libs/occt-import-js/occt-import-js.wasm", import.meta.url).href;
 const viewer = new Viewer(canvas, { occtImportJsWasmPath: occtImportJsWasmPath });
-viewer.appearance.enviroment.SetBackgroundColor(0x000000);
+// viewer.appearance.enviroment.SetBackgroundColor(0x000000);
 // viewer.appearance.effects.AddEffect(new UnrealBloomEffect(viewer));
 viewer.appearance.effects.AddEffect(new OutlineEffect(viewer));
 // viewer.appearance.effects.AddEffect(new BokehEffect(viewer));

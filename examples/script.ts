@@ -27,7 +27,7 @@ const occtImportJsWasmPath = new URL("../libs/occt-import-js/occt-import-js.wasm
 const viewer = new Viewer(canvas, { occtImportJsWasmPath: occtImportJsWasmPath });
 // viewer.appearance.enviroment.SetBackgroundColor(0x000000);
 // viewer.appearance.effects.AddEffect(new UnrealBloomEffect(viewer));
-viewer.appearance.effects.AddEffect(new OutlineEffect(viewer));
+// viewer.appearance.effects.AddEffect(new OutlineEffect(viewer));
 // viewer.appearance.effects.AddEffect(new BokehEffect(viewer));
 viewer.addListener("loaded", () => UpdatePlanesMinMax());
 const loadButton = document.getElementById("load-file");

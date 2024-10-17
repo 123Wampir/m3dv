@@ -11,10 +11,10 @@ export class SelectionManager extends EventEmitter {
         super();
         this.sceneManager = viewer.sceneManager;
         this.viewer = viewer;
-        this._selectionColor = new THREE.Color(color);
+        this._selectedMaterial.emissive = new THREE.Color(color);
         this.transformControls = new TransformControls(this.viewer.appearance.camera, this.viewer.renderer.domElement);
         this.transformControls.setSpace("local");
-        viewer.sceneManager.scene.add(this.transformControls);
+        // viewer.sceneManager.scene.add(this.transformControls);
         this.transformControls.addEventListener('mouseUp', e => this.selectionEnabled = false);
         this.viewer.controls.orbitControls.addEventListener('change', e => this.selectionEnabled = false);
         this.viewer.controls.trackballControls.addEventListener('change', e => this.selectionEnabled = false);
@@ -31,9 +31,9 @@ export class SelectionManager extends EventEmitter {
     selectMany = false;
     readonly filters: string[] = [];
     private readonly _target: Set<THREE.Object3D> = new Set();
-    private _selectionColor: THREE.Color;
+    private _selectedMaterial = new THREE.MeshLambertMaterial();
 
-    get selectionColor() { return this._selectionColor; };
+    get selectionColor() { return this._selectedMaterial.emissive; };
     get target(): readonly THREE.Object3D[] { return Array.from(this._target); };
 
     override addListener(event: "change", listener: Function): void {
@@ -44,6 +44,8 @@ export class SelectionManager extends EventEmitter {
     }
 
     Select(object?: THREE.Object3D) {
+        console.log(object);
+
         if (!this.selectMany) {
             this._target.clear();
         }
@@ -59,35 +61,23 @@ export class SelectionManager extends EventEmitter {
     }
     ShowSelected() {
         this._target.forEach(obj => obj.traverse(item => {
-            if ((item as any).material == undefined)
-                return;
-            if ((item as any).material.userData.emissive == undefined)
-                (item as any).material.userData.emissive = (item as any).material.emissive.getHex();
-            (item as any).material.emissive.setHex(this.selectionColor.getHex());
-            item.renderOrder = -1;
-            item.onBeforeRender = (r, s, c, g, m, group) => {
-                const material = m as any;
-                if (material.emissive != undefined) {
-                    material.emissive.setHex(this.selectionColor.getHex());
+            const mesh = item as THREE.Mesh;
+            if (mesh != undefined) {
+                if (mesh.userData.material == undefined) {
+                    mesh.userData.material = mesh.material;
                 }
-            }
-            item.onAfterRender = (r, s, c, g, m, group) => {
-                const material = m as any;
-                if (material.emissive != undefined)
-                    material.emissive.setHex((item as any).material.userData.emissive);
+                mesh.material = this._selectedMaterial;
             }
         }));
     }
 
     HideSelected() {
         this._target.forEach(obj => obj.traverse(item => {
-            if ((item as any).material == undefined)
-                return;
-            item.renderOrder = 0;
-            if ((item as any).material.userData.emissive != undefined) {
-                (item as any).material.emissive.setHex((item as any).material.userData.emissive);
-                item.onBeforeRender = () => { };
-                item.onAfterRender = () => { };
+            const mesh = item as THREE.Mesh;
+            if (mesh != undefined) {
+                if (mesh.userData.material != undefined) {
+                    mesh.material = mesh.userData.material;
+                }
             }
         }));
     }
@@ -121,7 +111,7 @@ export class SelectionManager extends EventEmitter {
     }
 
     SetSelectionColor(color: number | string) {
-        this._selectionColor = new THREE.Color(color);
+        this._selectedMaterial.emissive = new THREE.Color(color);
         this.HideSelected();
         this.ShowSelected();
     }

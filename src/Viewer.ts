@@ -34,6 +34,7 @@ export class Viewer extends EventEmitter {
         this.renderer.domElement.parentElement?.appendChild(this.stats.dom);
         this.stats.dom.style.right = "0";
         this.stats.dom.style.left = "";
+        this.stats.dom.style.position = "absolute";
         this.showStats = false;
         this.SetAnimationLoop();
         this.appearance.Resize();

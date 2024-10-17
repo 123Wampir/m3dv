@@ -136,7 +136,10 @@ export class SelectionManager extends EventEmitter {
         raycaster.setFromCamera(pointer, this.viewer.appearance.camera);
         let intersects = raycaster.intersectObjects(this.sceneManager.modelManager.model.children);
         if (intersects.length != 0) {
-            return intersects[0].object;
+            const visible = intersects.filter(i => i.object.visible);
+            if (visible.length != 0) {
+                return visible[0].object;
+            }
         }
         else return undefined;
     }

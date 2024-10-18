@@ -80,7 +80,7 @@ export class Viewer extends EventEmitter {
         return json;
     }
 
-    LoadModelFile(filename: string, src: string, useWorker = true) {
+    LoadModelFile(filename: string, src: string, useWorker = false) {
         if (window.Worker != undefined && useWorker) {
             this.fileManager.LoadModelInWorker(src, filename)
                 .then(e => {

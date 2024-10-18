@@ -1,6 +1,27 @@
 {
-  "name": "cad-model-viewer",
+  "name": "m3dv",
   "version": "0.0.1",
+  "author": {
+    "name": "D.Voronin",
+    "email": "DimaWoronin73@gmail.com",
+    "url": "https://github.com/123Wampir"
+  },
+  "description": "CAD 3D model viewer",
+  "keywords": [
+    "cad",
+    "viewer",
+    "3d",
+    "ts"
+  ],
+  "homepage": "https://github.com/123Wampir/m3dv",
+  "files": [
+    "dist/*"
+  ],
+  "main": "./dist/m3dv.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/123Wampir/m3dv.git"
+  },
   "dependencies": {
     "@types/three": "^0.169.0",
     "occt-import-js": "^0.0.21",

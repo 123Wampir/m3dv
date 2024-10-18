@@ -1,9 +1,7 @@
 import { CameraType } from "../src/Managers/Appearance";
 import { ControlsType } from "../src/Managers/Controls";
-import { OutlineEffect } from "../src/Managers/Effects/OutlineEffect";
-import { UnrealBloomEffect } from "../src/Managers/Effects/UnrealBloomEffect";
-import { BokehEffect } from "../src/Managers/Effects/BokehEffect";
-import { Viewer } from "../src/Viewer";
+// import { Viewer } from "../src/Viewer";
+import { Viewer } from "../src/m3dv"
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const wireframe = document.getElementById("wireframe") as HTMLInputElement;
@@ -25,10 +23,6 @@ const exclude = document.getElementById("exclude");
 
 const occtImportJsWasmPath = new URL("../libs/occt-import-js/occt-import-js.wasm", import.meta.url).href;
 const viewer = new Viewer(canvas, { occtImportJsWasmPath: occtImportJsWasmPath });
-// viewer.appearance.enviroment.SetBackgroundColor(0x000000);
-// viewer.appearance.effects.AddEffect(new UnrealBloomEffect(viewer));
-// viewer.appearance.effects.AddEffect(new OutlineEffect(viewer));
-// viewer.appearance.effects.AddEffect(new BokehEffect(viewer));
 viewer.addListener("loaded", () => UpdatePlanesMinMax());
 const loadButton = document.getElementById("load-file");
 loadButton!.onchange = (e) => {

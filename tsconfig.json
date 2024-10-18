@@ -3,7 +3,7 @@
     "src/Viewer.ts"
   ],
   "include": [
-    "src/Managers/FileManagerWorker.ts"
+    "src/**/*"
   ],
   "compilerOptions": {
     "target": "ESNext",
@@ -11,5 +11,6 @@
     "moduleResolution": "Bundler",
     "declaration": true,
     "outDir": "./dist",
+    "sourceMap": true
   }
 }

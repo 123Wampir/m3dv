@@ -30,16 +30,24 @@ export class Enviroment {
         this.color = color;
     }
 
-    async SetBackgroundImage(url: string) {
+    SetBackgroundImage(texture: THREE.DataTexture | null = null) {
+        if (texture == null)
+            texture = this.texture;
+        if (texture == null)
+            return;
+
+        this.viewer.sceneManager.scene.background = texture;
+        this.type = BackgroundType.image;
+        this.texture = texture;
+    }
+
+    async LoadBackgroundImage(url: string) {
         let envMap = await new RGBELoader().loadAsync(url);
         if (envMap != undefined) {
             this.disposeTexture();
 
             envMap.mapping = THREE.EquirectangularReflectionMapping;
-
-            this.viewer.sceneManager.scene.background = envMap;
-
-            this.texture = envMap;
+            this.SetBackgroundImage(envMap);
         }
     }
 

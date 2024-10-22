@@ -1,5 +1,6 @@
 import * as occtimportjs from "occt-import-js";
 import * as THREE from "three";
+import { BufferGeometryUtils } from "three/examples/jsm/Addons.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export interface FileManagerOptions {
@@ -179,6 +180,7 @@ export class FileManager {
                             obj.material.dispose();
                     });
                     obj.updateMatrixWorld(true);
+                    this._mergeGeometryGroups(obj);
                     resolve(obj);
                 }
             }).catch(e => {
@@ -187,5 +189,43 @@ export class FileManager {
             })
         })
     }
+
+    private _mergeGeometryGroups(object: THREE.Object3D) {
+        object.traverse(obj => {
+            const group = obj as THREE.Group;
+            if (group.isGroup != undefined && group.isGroup) {
+
+                const geom: Set<THREE.BufferGeometry> = new Set();
+                let material: THREE.Material | THREE.Material[] | null = null;
+
+                group.children.forEach(child => {
+                    const mesh = child as THREE.Mesh;
+                    if (mesh.isMesh != undefined && mesh.isMesh) {
+                        if (!geom.has(mesh.geometry)) {
+                            geom.add(mesh.geometry);
+                        }
+                        if (material == null) {
+                            material = mesh.material;
+                        }
+                        else {
+                            if (Array.isArray(mesh.material)) {
+                                mesh.material.forEach(m => m.dispose());
+                            }
+                            else mesh.material.dispose();
+                        }
+                    }
+                })
+                const resultGeom = BufferGeometryUtils.mergeGeometries(Array.from(geom));
+
+                geom.forEach(g => g.dispose());
+                group.children = [];
+
+                const resultMesh = new THREE.Mesh(resultGeom, material);
+                resultMesh.name = group.name;
+                group.add(resultMesh);
+            }
+        })
+    }
+
     //#endregion
 }

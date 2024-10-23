@@ -20,7 +20,7 @@
   "main": "./dist/m3dv.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/123Wampir/m3dv.git"
+    "url": "git+https://github.com/123Wampir/m3dv.git"
   },
   "dependencies": {
     "@types/three": "^0.169.0",
@@ -34,6 +34,6 @@
   "scripts": {
     "build": "tsc",
     "dev": "npx vite examples",
-    "publish": "npm run build && npm publish"
+    "publish": "tsc && npm publish"
   }
 }

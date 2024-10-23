@@ -1,4 +1,4 @@
-import { CameraType } from "../src/Managers/Appearance";
+import { CameraType, ViewFitType } from "../src/Managers/Appearance";
 import { ControlsType } from "../src/Managers/Controls";
 import { ToneMapping } from "../src/Managers/Objects/Enviroment";
 // import { Viewer } from "../src/Viewer";
@@ -36,6 +36,16 @@ const backgroundRotationZ = document.getElementById("backgroundRotationZ") as HT
 
 const tone = document.getElementById("tone") as HTMLSelectElement;
 
+
+window.onkeydown = (e: KeyboardEvent) => {
+    if (e.code == "KeyF") {
+        if (viewer.selectionManager.target.length != 0)
+            viewer?.appearance.FitInView(ViewFitType.selected);
+        else viewer?.appearance.FitInView(ViewFitType.model);
+        viewer?.appearance.Render();
+    }
+
+}
 
 const occtImportJsWasmPath = new URL("../libs/occt-import-js/occt-import-js.wasm", import.meta.url).href;
 const viewer = new Viewer(canvas, { occtImportJsWasmPath: occtImportJsWasmPath });

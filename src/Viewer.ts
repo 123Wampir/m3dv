@@ -148,6 +148,7 @@ export class Viewer extends EventEmitter {
 
     private onModelLoaded = (object: Object3D) => {
         console.log((this.renderer as WebGLRenderer).info.memory);
+        this.explodeView.Reset();
         this.sceneManager.modelManager.SetModel(object);
         this.resetScene();
     }

@@ -182,17 +182,17 @@ export class ModelManager extends EventEmitter {
     private moveToCenter() {
         this.model.position.set(0, 0, 0);
         this.model.updateMatrixWorld(true);
-        let result = this.calculateBounding(this.model);
-        let bbox = result.bbox;
-        let center = new THREE.Vector3();
+        const result = this.calculateBounding(this.model);
+        const bbox = result.bbox;
+        const center = new THREE.Vector3();
         bbox.getCenter(center).negate();
         center.y = -bbox.min.y;
         this.model.position.set(center.x, center.y, center.z);
     }
 
     private calculateBounding(object: THREE.Object3D) {
-        let bbox = new THREE.Box3().setFromObject(object);
-        let bsphere = new THREE.Sphere();
+        const bbox = new THREE.Box3().setFromObject(object);
+        const bsphere = new THREE.Sphere();
         bbox.getBoundingSphere(bsphere);
         return { bbox, bsphere };
     }

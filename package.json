@@ -1,6 +1,6 @@
 {
   "name": "m3dv",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "author": {
     "name": "D.Voronin",
     "email": "DimaWoronin73@gmail.com",
@@ -34,6 +34,6 @@
   "scripts": {
     "build": "tsc",
     "dev": "npx vite examples",
-    "publish": "tsc && npm publish"
+    "deploy": "tsc && npm publish"
   }
 }

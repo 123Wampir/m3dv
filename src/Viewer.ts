@@ -133,7 +133,6 @@ export class Viewer extends EventEmitter {
         function animate() {
             requestAnimationFrame(animate);
             viewer.controls.GetCameraControl().update();
-            viewer.appearance.CopyCameraPlacement();
             viewer.stats.update();
         }
         viewer.appearance.Render();

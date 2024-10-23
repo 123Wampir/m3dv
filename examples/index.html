@@ -8,8 +8,13 @@
 </head>
 
 <body>
-    <input type="file" accept=".gtlf,.glb,.step,.iges,.brep" id="load-file">
     <div>
+        <button>
+            <label>
+                Load model
+                <input type="file" accept=".gtlf,.glb,.step,.iges,.brep" id="load-file">
+            </label>
+        </button>
         <input type="checkbox" id="wireframe" />
         <label for="wireframe">wireframe</label>
         <input type="checkbox" id="smallparts" />
@@ -29,12 +34,64 @@
         <input type="checkbox" id="planez" />
         <input type="range" id="planez-offset" />
         <label for="planez">Z</label>
-    </div>
-    <div>
         <input type="checkbox" id="intersection" />
         <label for="intersection">intersection</label>
         <button id="include">include</button>
         <button id="exclude">exclude</button>
+    </div>
+    <div>
+        <label>
+            Background
+            <input type="color" name="background" id="background">
+        </label>
+        <button>
+            <label>
+                Load HDR
+                <input type="file" name="hdr" id="hdr" accept=".hdr">
+            </label>
+        </button>
+        <label>
+            Reflection
+            <input type="checkbox" name="reflection" id="reflection">
+        </label>
+        <label>
+            Is reflection on
+            <input type="checkbox" name="isReflectionMapEnabled" id="isReflectionMapEnabled" disabled>
+        </label>
+        <label>
+            Exposure
+            <input type="range" name="exposure" id="exposure" min="0.001" max="3" step="0.001" value="1">
+        </label>
+        <label>
+            Intensity
+            <input type="range" name="backgroundIntensity" id="backgroundIntensity" min="0" max="1" step="0.01"
+                value="1">
+        </label>
+        <label>
+            Blurriness
+            <input type="range" name="backgroundBlurriness" id="backgroundBlurriness" min="0" max="1" step="0.01"
+                value="0">
+        </label>
+        <label>
+            X
+            <input type="range" name="backgroundRotationX" id="backgroundRotationX" min="0" max="360" value="0">
+        </label>
+        <label>
+            Y
+            <input type="range" name="backgroundRotationY" id="backgroundRotationY" min="0" max="360" value="0">
+        </label>
+        <label>
+            Z
+            <input type="range" name="backgroundRotationZ" id="backgroundRotationZ" min="0" max="360" value="0">
+        </label>
+        <select name="tone" id="tone">
+            <option value="0">linear</option>
+            <option value="1">Reinhard</option>
+            <option value="2">Cineon</option>
+            <option value="3">ASEC</option>
+            <option value="4">AgX</option>
+            <option value="5">Neutral</option>
+        </select>
     </div>
     <canvas id="canvas" />
 </body>
@@ -50,6 +107,17 @@
         flex-direction: column;
     }
 
+    body>div {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    div>* {
+        margin: 2px 3px;
+    }
+
     canvas {
         /* position: absolute;
         top: 0;
@@ -58,6 +126,10 @@
         width: 100%;
         height: 0%;
         z-index: 1;
+    }
+
+    input[type="file"] {
+        display: none;
     }
 </style>
 

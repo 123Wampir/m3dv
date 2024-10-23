@@ -31,7 +31,7 @@ export class SelectionManager extends EventEmitter {
     selectMany = false;
     readonly filters: string[] = [];
     private readonly _target: Set<THREE.Object3D> = new Set();
-    private _selectedMaterial = new THREE.MeshLambertMaterial();
+    private _selectedMaterial = new THREE.MeshToonMaterial();
 
     get selectionColor() { return this._selectedMaterial.emissive; };
     get target(): readonly THREE.Object3D[] { return Array.from(this._target); };

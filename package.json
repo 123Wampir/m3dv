@@ -1,6 +1,6 @@
 {
   "name": "m3dv",
-  "version": "0.0.2",
+  "version": "0.0.7",
   "author": {
     "name": "D.Voronin",
     "email": "DimaWoronin73@gmail.com",
@@ -20,7 +20,7 @@
   "main": "./dist/m3dv.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/123Wampir/m3dv.git"
+    "url": "git+https://github.com/123Wampir/m3dv.git"
   },
   "dependencies": {
     "@types/three": "^0.169.0",
@@ -33,6 +33,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "npx vite examples"
+    "dev": "npx vite examples",
+    "deploy": "tsc && npm publish"
   }
 }

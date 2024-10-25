@@ -37,7 +37,7 @@ export class AnimationManager extends EventEmitter {
 
     BuildTree(sceneManager: SceneManager) {
         this.tracks.splice(0, this.tracks.length);
-        sceneManager.lights.forEach(light => this.AddTrack(light));
+        // sceneManager.lights.forEach(light => this.AddTrack(light));
         sceneManager.modelManager.model.traverse(obj => {
             if (obj.type != "Object3D")
                 this.AddTrack(obj);

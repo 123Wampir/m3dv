@@ -31,6 +31,7 @@ export class Appearance extends EventEmitter {
 
         this.viewer = viewer;
         this.composer = new EffectComposer(viewer.renderer as THREE.WebGLRenderer);
+
         this.SetCameraType(CameraType.perspective);
         this.SetCameraPos(new THREE.Vector3(5, 5, 5));
         this._addDefaultPasses();
@@ -40,6 +41,7 @@ export class Appearance extends EventEmitter {
 
         this.effects = new Effects(this.composer);
         window.addEventListener("resize", () => this.Resize());
+        viewer.addListener("loaded", this._updateNearFarCameraPlanes);
     }
     private readonly viewer: Viewer;
 
@@ -117,6 +119,7 @@ export class Appearance extends EventEmitter {
 
 
     Render() {
+        this.CopyCameraPlacement();
         this.composer.render();
     }
 
@@ -217,5 +220,15 @@ export class Appearance extends EventEmitter {
         this.orthographicCamera.bottom = -h / 2;
         this.orthographicCamera.updateProjectionMatrix();
     }
-
+    private _updateNearFarCameraPlanes() {
+        const viewer = this as any as Viewer;
+        const bsphere = viewer.sceneManager.modelManager.GetBounding(BoundingType.sphere, ViewType.default) as THREE.Sphere;
+        const far = bsphere.radius * 100;
+        const near = bsphere.radius / 100;
+        viewer.appearance.perspectiveCamera.far = far;
+        viewer.appearance.orthographicCamera.far = far;
+        viewer.appearance.perspectiveCamera.near = near;
+        viewer.appearance.orthographicCamera.near = near;
+        console.log("near: ", near, "far: ", far);
+    }
 }

@@ -1,5 +1,6 @@
-import { CameraType } from "../src/Managers/Appearance";
+import { CameraType, ViewFitType } from "../src/Managers/Appearance";
 import { ControlsType } from "../src/Managers/Controls";
+import { ToneMapping } from "../src/Managers/Objects/Enviroment";
 // import { Viewer } from "../src/Viewer";
 import { Viewer } from "../src/m3dv"
 
@@ -20,6 +21,34 @@ const zoffset = document.getElementById("planez-offset") as HTMLInputElement;
 const intersection = document.getElementById("intersection") as HTMLInputElement;
 const include = document.getElementById("include");
 const exclude = document.getElementById("exclude");
+
+const background = document.getElementById("background") as HTMLInputElement;
+const hdr = document.getElementById("hdr") as HTMLInputElement;
+const reflection = document.getElementById("reflection") as HTMLInputElement;
+const isReflectionMapEnabled = document.getElementById("isReflectionMapEnabled") as HTMLInputElement;
+
+const exposure = document.getElementById("exposure") as HTMLInputElement;
+const backgroundIntensity = document.getElementById("backgroundIntensity") as HTMLInputElement;
+const backgroundBlurriness = document.getElementById("backgroundBlurriness") as HTMLInputElement;
+const backgroundRotationX = document.getElementById("backgroundRotationX") as HTMLInputElement;
+const backgroundRotationY = document.getElementById("backgroundRotationY") as HTMLInputElement;
+const backgroundRotationZ = document.getElementById("backgroundRotationZ") as HTMLInputElement;
+
+const tone = document.getElementById("tone") as HTMLSelectElement;
+
+
+window.onkeydown = (e: KeyboardEvent) => {
+    if (e.code == "KeyF") {
+        if (viewer.selectionManager.target.length != 0)
+            viewer?.appearance.FitInView(ViewFitType.selected);
+        else viewer?.appearance.FitInView(ViewFitType.model);
+        viewer?.appearance.Render();
+    }
+    if (e.code == "KeyI") {
+        viewer.Isolate();
+    }
+
+}
 
 const occtImportJsWasmPath = new URL("../libs/occt-import-js/occt-import-js.wasm", import.meta.url).href;
 const viewer = new Viewer(canvas, { occtImportJsWasmPath: occtImportJsWasmPath });
@@ -80,10 +109,72 @@ include!.onclick = (e) => {
     viewer.selectionManager.target.forEach(t => viewer.sceneManager.planeManager.Include(t));
 }
 exclude!.onclick = (e) => {
-    // console.log(viewer.selectionManager.target);
     viewer.selectionManager.target.forEach(t => viewer.sceneManager.planeManager.Exclude(t));
 }
 
+background.oninput = (e) => {
+    const hex = (e.target as any).value;
+    viewer.appearance.enviroment.SetBackgroundColor(hex);
+    isReflectionMapEnabled.checked = viewer.appearance.enviroment.isReflectionMapEnabled;
+    viewer.appearance.Render();
+}
+
+hdr!.onchange = (e) => {
+    const files = (e.target as any).files;
+    if (files.length != 0) {
+        const file = files[0] as File;
+        const src = URL.createObjectURL(file);
+        viewer.appearance.enviroment.LoadBackgroundImage(src).then(() => {
+            isReflectionMapEnabled.checked = viewer.appearance.enviroment.isReflectionMapEnabled;
+            viewer.appearance.Render();
+        });
+    }
+}
+
+reflection.oninput = (e) => {
+    const value = (e.target as any).checked;
+    viewer.appearance.enviroment.SetReflectionMap(value);
+    isReflectionMapEnabled.checked = viewer.appearance.enviroment.isReflectionMapEnabled;
+    viewer.appearance.Render();
+}
+
+exposure.oninput = (e) => {
+    viewer.appearance.enviroment.exposure = (e.target as any).value;
+    viewer.appearance.Render();
+}
+
+backgroundIntensity.oninput = (e) => {
+    viewer.appearance.enviroment.backgroundIntensity = (e.target as any).value;
+    viewer.appearance.Render();
+}
+
+backgroundBlurriness.oninput = (e) => {
+    viewer.appearance.enviroment.backgroundBlurriness = (e.target as any).value;
+    viewer.appearance.Render();
+}
+
+backgroundRotationX.oninput = (e) => {
+    viewer.appearance.enviroment.backgroundRotation.x = (e.target as any).value * Math.PI / 180;
+    viewer.appearance.Render();
+}
+
+backgroundRotationY.oninput = (e) => {
+    viewer.appearance.enviroment.backgroundRotation.y = (e.target as any).value * Math.PI / 180;
+    viewer.appearance.Render();
+}
+
+backgroundRotationZ.oninput = (e) => {
+    viewer.appearance.enviroment.backgroundRotation.z = (e.target as any).value * Math.PI / 180;
+    viewer.appearance.Render();
+}
+
+tone.onchange = (e) => {
+    const value = Number.parseInt((e.target as any).value);
+    console.log(value);
+
+    viewer.appearance.enviroment.toneMapping = value as ToneMapping;
+    viewer.appearance.Render();
+}
 
 function UpdatePlanesMinMax() {
     xoffset.min = (viewer.sceneManager.planeManager.planes[0].min - 1e-6).toString();

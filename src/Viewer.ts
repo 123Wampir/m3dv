@@ -104,17 +104,17 @@ export class Viewer extends EventEmitter {
     Isolate() {
         if (this.appearance.viewType == ViewType.default) {
             if (this.selectionManager.target.length != 0) {
-                this.selectionManager.target.forEach(object => {
-                    object.layers.toggle(1);
-                })
+                this.selectionManager.target.forEach(object => object.traverse(item => {
+                    item.layers.toggle(1);
+                }));
                 this.appearance.SetCameraViewType(ViewType.isolated);
                 this.appearance.FitInView(ViewFitType.isolated);
             }
         }
         else {
-            this.sceneManager.modelManager.model.traverse(obj => {
-                obj.layers.disable(1);
-            })
+            this.sceneManager.modelManager.model.traverse(object => object.traverse(item => {
+                item.layers.disable(1);
+            }));
             this.appearance.SetCameraViewType(ViewType.default);
             this.appearance.FitInView(ViewFitType.model);
         }
@@ -133,7 +133,6 @@ export class Viewer extends EventEmitter {
         function animate() {
             requestAnimationFrame(animate);
             viewer.controls.GetCameraControl().update();
-            viewer.appearance.CopyCameraPlacement();
             viewer.stats.update();
         }
         viewer.appearance.Render();
@@ -149,6 +148,7 @@ export class Viewer extends EventEmitter {
 
     private onModelLoaded = (object: Object3D) => {
         console.log((this.renderer as WebGLRenderer).info.memory);
+        this.explodeView.Reset();
         this.sceneManager.modelManager.SetModel(object);
         this.resetScene();
     }

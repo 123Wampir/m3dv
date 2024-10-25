@@ -1,7 +1,5 @@
 import * as THREE from "three";
-import { TransformControls } from "three/examples/jsm/controls/TransformControls.js"
 import type { Viewer } from "../Viewer";
-import { type SceneManager } from "./SceneManager";
 import { EventEmitter } from "../Event/Event";
 import { BoundingType } from "./ModelManager";
 import { ViewType } from "./Appearance";
@@ -9,32 +7,22 @@ import { ViewType } from "./Appearance";
 export class SelectionManager extends EventEmitter {
     constructor(viewer: Viewer, color: number = 0x0099FF) {
         super();
-        this.sceneManager = viewer.sceneManager;
         this.viewer = viewer;
         this._selectedMaterial.emissive = new THREE.Color(color);
-        this.transformControls = new TransformControls(this.viewer.appearance.camera, this.viewer.renderer.domElement);
-        this.transformControls.setSpace("local");
-        // viewer.sceneManager.scene.add(this.transformControls);
-        this.transformControls.addEventListener('mouseUp', e => this.selectionEnabled = false);
         this.viewer.controls.orbitControls.addEventListener('change', e => this.selectionEnabled = false);
         this.viewer.controls.trackballControls.addEventListener('change', e => this.selectionEnabled = false);
-        let context = viewer;
-        this.transformControls.addEventListener('dragging-changed', function (event: any) {
-            context.controls.GetCameraControl().enabled = !event.value;
-        });
         this.viewer.renderer.domElement.addEventListener("click", e => this.onClickCallback(e));
     }
-    private selectionEnabled = false;
-    private readonly viewer: Viewer;
-    private readonly sceneManager: SceneManager;
-    private readonly transformControls: TransformControls;
-    selectMany = false;
-    readonly filters: string[] = [];
-    private readonly _target: Set<THREE.Object3D> = new Set();
-    private _selectedMaterial = new THREE.MeshToonMaterial();
 
+    allowMultiple = false;
+    readonly filters: string[] = [];
     get selectionColor() { return this._selectedMaterial.emissive; };
     get target(): readonly THREE.Object3D[] { return Array.from(this._target); };
+
+    private selectionEnabled = false;
+    private readonly viewer: Viewer;
+    private readonly _target: Set<THREE.Object3D> = new Set();
+    private _selectedMaterial = new THREE.MeshToonMaterial();
 
     override addListener(event: "change", listener: Function): void {
         super.addListener(event, listener);
@@ -46,7 +34,7 @@ export class SelectionManager extends EventEmitter {
     Select(object?: THREE.Object3D) {
         console.log(object);
 
-        if (!this.selectMany) {
+        if (!this.allowMultiple) {
             this._target.clear();
         }
         if (object != undefined) {
@@ -82,6 +70,10 @@ export class SelectionManager extends EventEmitter {
         }));
     }
 
+    SetSelectionColor(color: number | string) {
+        this._selectedMaterial.emissive = new THREE.Color(color);
+    }
+
     GetBounding(type: BoundingType): THREE.Box3 | THREE.Sphere {
         switch (type) {
             case BoundingType.box:
@@ -110,23 +102,18 @@ export class SelectionManager extends EventEmitter {
         return box3.getBoundingSphere(sphere);
     }
 
-    SetSelectionColor(color: number | string) {
-        this._selectedMaterial.emissive = new THREE.Color(color);
-        this.HideSelected();
-        this.ShowSelected();
-    }
-
     private onClickCallback(event: MouseEvent) {
-        const pointer = new THREE.Vector2();
-        pointer.x = (event.offsetX / this.viewer.renderer.domElement.clientWidth) * 2 - 1;
-        pointer.y = - (event.offsetY / this.viewer.renderer.domElement.clientHeight) * 2 + 1;
-        this.selectMany = event.shiftKey;
-        this.HideSelected();
-        if (this.selectionEnabled)
+        if (this.selectionEnabled) {
+            const pointer = new THREE.Vector2();
+            pointer.x = (event.offsetX / this.viewer.renderer.domElement.clientWidth) * 2 - 1;
+            pointer.y = - (event.offsetY / this.viewer.renderer.domElement.clientHeight) * 2 + 1;
+            this.allowMultiple = event.shiftKey;
+            this.HideSelected();
             this.Select(this.FindIntersection(pointer));
+            this.ShowSelected();
+            this.viewer.appearance.Render();
+        }
         else this.selectionEnabled = true;
-        this.ShowSelected();
-        this.viewer.appearance.Render();
     }
 
     private FindIntersection(pointer: THREE.Vector2): THREE.Object3D | undefined {
@@ -134,7 +121,7 @@ export class SelectionManager extends EventEmitter {
         if (this.viewer.appearance.viewType == ViewType.isolated)
             raycaster.layers.set(1);
         raycaster.setFromCamera(pointer, this.viewer.appearance.camera);
-        let intersects = raycaster.intersectObjects(this.sceneManager.modelManager.model.children);
+        let intersects = raycaster.intersectObjects(this.viewer.sceneManager.modelManager.model.children);
         if (intersects.length != 0) {
             const visible = intersects.filter(i => i.object.visible);
             if (visible.length != 0) {

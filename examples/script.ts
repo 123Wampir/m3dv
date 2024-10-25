@@ -44,6 +44,9 @@ window.onkeydown = (e: KeyboardEvent) => {
         else viewer?.appearance.FitInView(ViewFitType.model);
         viewer?.appearance.Render();
     }
+    if (e.code == "KeyI") {
+        viewer.Isolate();
+    }
 
 }
 

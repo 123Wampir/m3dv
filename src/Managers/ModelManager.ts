@@ -38,6 +38,7 @@ export class ModelManager extends EventEmitter {
         this.model.position.set(0, 0, 0);
         this.materialManager.LoadMaterialsFromModel();
         this.moveToCenter();
+        this.fixMeshPivot(this.model);
         this.saveState();
     }
 
@@ -158,17 +159,31 @@ export class ModelManager extends EventEmitter {
         })
     }
 
-    private fixMeshPivot() {
-        this.model.traverse(obj => {
-            if ((obj as any).geometry != undefined) {
-                let pos = obj.position.clone();
-                var geometry = (obj as THREE.Mesh).geometry;
+    private fixMeshPivot(model: THREE.Object3D) {
+        // Due to the shared geometry, we need to keep the centers of the geometries relative to the Mesh
+        const centers = new Map<THREE.Mesh, THREE.Vector3>();
+        model.traverse(obj => {
+            obj.updateWorldMatrix(false, true);
+            obj.updateMatrix();
+            const mesh = obj as THREE.Mesh;
+            if (mesh.isMesh != undefined && mesh.isMesh) {
+                const geometry = mesh.geometry;
                 geometry.computeBoundingBox();
-                var center = new THREE.Vector3();
+                const center = new THREE.Vector3();
                 geometry.boundingBox?.getCenter(center);
-                geometry.center()
-                obj.position.set(center.x, center.y, center.z);
-                obj.position.add(pos);
+                centers.set(mesh, center);
+            }
+        })
+        model.traverse(obj => {
+            const mesh = obj as THREE.Mesh;
+            if (mesh.isMesh != undefined && mesh.isMesh) {
+                const geometry = mesh.geometry;
+                geometry.center();
+                const center = centers.get(mesh);
+                const newCenter = new THREE.Vector3();
+                geometry.boundingBox.getCenter(newCenter);
+                const offset = newCenter.clone().sub(center).applyQuaternion(mesh.quaternion);
+                mesh.position.sub(offset);
             }
         })
     }

@@ -28,7 +28,8 @@ export class Enviroment {
     private _color: THREE.Color = new THREE.Color(0xAAAAAA);
     get color(): string { return `#${this._color.getHexString()}`; };
 
-    texture: THREE.DataTexture | null = null;
+    private _texture: THREE.DataTexture | null = null;
+    get texture() { return this._texture; };
 
     private _type: BackgroundType = BackgroundType.color;
     get type(): BackgroundType { return this._type; };
@@ -73,7 +74,7 @@ export class Enviroment {
 
         this.viewer.sceneManager.scene.background = texture;
         this._type = BackgroundType.image;
-        this.texture = texture;
+        this._texture = texture;
     }
 
     SetReflectionMap(enable: boolean) {
@@ -134,7 +135,7 @@ export class Enviroment {
     private disposeTexture() {
         if (this.texture != null) {
             this.texture.dispose();
-            this.texture = null;
+            this._texture = null;
             this.viewer.sceneManager.scene.background = null;
             this._disableTextureAsReflectionMap();
         }

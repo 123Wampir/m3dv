@@ -2,7 +2,6 @@ import { EventEmitter } from "../../Event/Event";
 import { Plane } from "./Plane";
 import { SceneManager } from "../SceneManager";
 import * as THREE from "three";
-import { RGBELoader } from "three/examples/jsm/Addons.js";
 
 
 export enum SectionFillType {
@@ -21,6 +20,13 @@ export class PlaneManager extends EventEmitter {
         this.clippingGroup.add(this.stencilGroup);
 
         serviceGroup.add(this.clippingGroup);
+    }
+
+    override addListener(event: "change" | "delete", listener: Function): void {
+        super.addListener(event, listener);
+    }
+    override emit(event: "change" | "delete", ...any: any): void {
+        super.emit(event, ...any);
     }
 
     private readonly sceneManager: SceneManager;
@@ -74,12 +80,14 @@ export class PlaneManager extends EventEmitter {
         this.helpersGroup.add(plane.helper);
         this.cutPlanesGroup.add(plane.cutPlane);
         this.stencilGroup.add(plane.stencilGroup);
+        this.emit("change", plane);
         return plane;
     }
 
     DeletePlane(plane: Plane) {
         this._planes.splice(this._planes.indexOf(plane));
         plane.Dispose();
+        this.emit("delete", plane);
     }
 
     Exclude(model: THREE.Object3D) {

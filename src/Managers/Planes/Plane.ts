@@ -41,11 +41,11 @@ export class Plane extends EventEmitter {
     private _min: number = 0;
     private _max: number = 0;
     private _order: number = 0;
-    private _visible = false;
     get min() { return this._min; };
     get max() { return this._max; };
     get order() { return this._order; };
-    get visible() { return this._visible; }
+    get offset() { return this.plane.constant; };
+    get visible() { return this.cutPlane.visible; }
 
     readonly planeMaterial = new THREE.MeshBasicMaterial({
         color: 0xfff000,
@@ -65,7 +65,6 @@ export class Plane extends EventEmitter {
     }
 
     SetVisibility(visible: boolean) {
-        this._visible = visible;
         this.cutPlane.visible = visible;
         this.stencilGroup.visible = visible;
 

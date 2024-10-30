@@ -51,7 +51,7 @@ export class PlaneManager extends EventEmitter {
     private _type: SectionFillType = SectionFillType.color;
     get type(): SectionFillType { return this._type; };
 
-    private readonly tempMaterials: Map<THREE.Object3D, THREE.Material> = new Map();
+    private readonly initialMaterials: Map<THREE.Mesh, THREE.Material> = new Map();
 
     Update() {
         if (this._planes.length != 0) {
@@ -92,12 +92,14 @@ export class PlaneManager extends EventEmitter {
 
     Exclude(model: THREE.Object3D) {
         model.traverse(item => {
-            if ((item as any).material != undefined) {
-                const mat = (item as any).material as THREE.Material;
-                if (!this.tempMaterials.has(item)) {
-                    this.tempMaterials.set(item, mat);
-                    (item as any).material = mat.clone();
-                    (item as any).material.clippingPlanes = [];
+            const mesh = item as THREE.Mesh;
+            if (mesh.isMesh != undefined && mesh.isMesh) {
+                const material = this.sceneManager.modelManager.materialManager.GetMaterial(mesh);
+                if (!this.initialMaterials.has(mesh)) {
+                    this.initialMaterials.set(mesh, material);
+                    const tempMaterial = material.clone();
+                    tempMaterial.clippingPlanes.length = 0;
+                    this.sceneManager.modelManager.materialManager.SetMaterial(mesh, tempMaterial);
                 }
             }
             this._included.delete(item);
@@ -106,12 +108,14 @@ export class PlaneManager extends EventEmitter {
 
     Include(model: THREE.Object3D) {
         model.traverse(item => {
-            if ((item as any).material != undefined) {
-                if (this.tempMaterials.has(item)) {
-                    const mat = (item as any).material as THREE.Material;
-                    (item as any).material = this.tempMaterials.get(item);
-                    this.tempMaterials.delete(item);
-                    mat.dispose();
+            const mesh = item as THREE.Mesh;
+            if (mesh.isMesh != undefined && mesh.isMesh) {
+                if (this.initialMaterials.has(mesh)) {
+                    const material = this.initialMaterials.get(mesh);
+                    const tempMaterial = this.sceneManager.modelManager.materialManager.GetMaterial(mesh);
+                    this.sceneManager.modelManager.materialManager.SetMaterial(mesh, material);
+                    this.sceneManager.modelManager.materialManager.DeleteMaterial(tempMaterial);
+                    this.initialMaterials.delete(mesh);
                 }
             }
             this._included.add(item);

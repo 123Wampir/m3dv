@@ -13,13 +13,17 @@ export class MaterialManager extends EventEmitter {
     private readonly modelManager: ModelManager;
     private readonly materials: Set<THREE.Material> = new Set<THREE.Material>();
 
+    private modelMaterials: Map<THREE.Mesh, THREE.Material> = new Map();
+
     LoadMaterialsFromModel() {
         this.materials.clear();
+        this.modelMaterials.clear();
         this.modelManager.model.traverse(object => {
-            const obj = object as any;
-            if (obj.material != undefined) {
-                const material = obj.material as THREE.Material;
+            const mesh = object as THREE.Mesh;
+            if (mesh.isMesh != undefined && mesh.isMesh) {
+                const material = mesh.material as THREE.Material;
                 this.AddMaterial(material);
+                this.modelMaterials.set(mesh, material);
             }
         });
         console.log(this.materials);
@@ -33,20 +37,25 @@ export class MaterialManager extends EventEmitter {
         return Array.from(this.materials.values());
     }
 
+    GetMaterial(mesh: THREE.Mesh): THREE.Material {
+        return this.modelMaterials.get(mesh);
+    }
+
     AddMaterial(material: THREE.Material) {
         if (!this.materials.has(material))
             this.materials.add(material);
     }
 
+    SetMaterial(mesh: THREE.Mesh, material: THREE.Material) {
+        this.AddMaterial(material);
+        this.modelMaterials.set(mesh, material);
+    }
+
     DeleteMaterial(material: THREE.Material) {
-        this.modelManager.model.traverse(object => {
-            const obj = object as any;
-            if (obj.material != undefined) {
-                const currentMaterial = obj.material as THREE.Material;
-                if (currentMaterial.uuid == material.uuid) {
-                    console.warn(`Can't delete material because it's used by object: name: ${object.name}; uuid: ${object.uuid}`);
-                    return;
-                }
+        this.modelMaterials.forEach((v, k) => {
+            if (v == material) {
+                console.warn(`Can't delete material because it's used by object: name: ${k.name}; uuid: ${k.uuid}`);
+                return;
             }
         })
         if (this.materials.delete(material)) {
@@ -56,12 +65,9 @@ export class MaterialManager extends EventEmitter {
 
     ReplaceMaterial(oldMaterial: THREE.Material, newMaterial: THREE.Material) {
         this.AddMaterial(newMaterial);
-        this.modelManager.model.traverse(object => {
-            const obj = object as any;
-            if (obj.material != undefined) {
-                const currentMaterial = obj.material as THREE.Material;
-                if (currentMaterial.uuid == oldMaterial.uuid)
-                    obj.material = newMaterial;
+        this.modelMaterials.forEach((v, k) => {
+            if (v == oldMaterial) {
+                this.modelMaterials.set(k, newMaterial);
             }
         })
     }

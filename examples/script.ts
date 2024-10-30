@@ -22,6 +22,9 @@ const intersection = document.getElementById("intersection") as HTMLInputElement
 const include = document.getElementById("include");
 const exclude = document.getElementById("exclude");
 
+const sectionFillColor = document.getElementById("sectionFillColor") as HTMLInputElement;
+const sectionFillMap = document.getElementById("sectionFillMap") as HTMLInputElement;
+
 const background = document.getElementById("background") as HTMLInputElement;
 const hdr = document.getElementById("hdr") as HTMLInputElement;
 const reflection = document.getElementById("reflection") as HTMLInputElement;
@@ -110,6 +113,22 @@ include!.onclick = (e) => {
 }
 exclude!.onclick = (e) => {
     viewer.selectionManager.target.forEach(t => viewer.sceneManager.planeManager.Exclude(t));
+}
+
+sectionFillColor!.oninput = (e) => {
+    const hex = (e.target as any).value;
+    viewer.sceneManager.planeManager.SetSectionFillColor(hex);
+    viewer.appearance.Render();
+}
+sectionFillMap!.onchange = (e) => {
+    const files = (e.target as any).files;
+    if (files.length != 0) {
+        const file = files[0] as File;
+        const src = URL.createObjectURL(file);
+        viewer.sceneManager.planeManager.LoadSectionFillImage(src).then(() => {
+            viewer.appearance.Render();
+        });
+    }
 }
 
 background.oninput = (e) => {

@@ -50,10 +50,7 @@ export class SelectionManager extends EventEmitter {
     ShowSelected() {
         this._target.forEach(obj => obj.traverse(item => {
             const mesh = item as THREE.Mesh;
-            if (mesh != undefined) {
-                if (mesh.userData.material == undefined) {
-                    mesh.userData.material = mesh.material;
-                }
+            if (mesh.isMesh != undefined && mesh.isMesh) {
                 mesh.material = this._selectedMaterial;
             }
         }));
@@ -62,10 +59,8 @@ export class SelectionManager extends EventEmitter {
     HideSelected() {
         this._target.forEach(obj => obj.traverse(item => {
             const mesh = item as THREE.Mesh;
-            if (mesh != undefined) {
-                if (mesh.userData.material != undefined) {
-                    mesh.material = mesh.userData.material;
-                }
+            if (mesh.isMesh != undefined && mesh.isMesh) {
+                mesh.material = this.viewer.sceneManager.modelManager.materialManager.GetMaterial(mesh);
             }
         }));
     }

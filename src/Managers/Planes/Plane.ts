@@ -13,17 +13,8 @@ export class Plane extends EventEmitter {
         this.helper.visible = false;
         this._order = this.planeManager.planes.length + 1;
 
-        const planeMat = new THREE.MeshBasicMaterial({
-            color: 0xfff000,
-            stencilWrite: true,
-            stencilRef: 0,
-            stencilFunc: THREE.NotEqualStencilFunc,
-            stencilFail: THREE.ReplaceStencilOp,
-            stencilZFail: THREE.ReplaceStencilOp,
-            stencilZPass: THREE.ReplaceStencilOp,
-        });
         const planeGeom = new THREE.PlaneGeometry();
-        this.cutPlane = new THREE.Mesh(planeGeom, planeMat);
+        this.cutPlane = new THREE.Mesh(planeGeom, this.planeMaterial);
 
         this.cutPlane.onBeforeRender = () => {
             plane.coplanarPoint(this.cutPlane.position);
@@ -50,11 +41,21 @@ export class Plane extends EventEmitter {
     private _min: number = 0;
     private _max: number = 0;
     private _order: number = 0;
-    private _visible = false;
     get min() { return this._min; };
     get max() { return this._max; };
     get order() { return this._order; };
-    get visible() { return this._visible; }
+    get offset() { return this.plane.constant; };
+    get visible() { return this.cutPlane.visible; }
+
+    readonly planeMaterial = new THREE.MeshBasicMaterial({
+        color: 0xfff000,
+        stencilWrite: true,
+        stencilRef: 0,
+        stencilFunc: THREE.NotEqualStencilFunc,
+        stencilFail: THREE.ReplaceStencilOp,
+        stencilZFail: THREE.ReplaceStencilOp,
+        stencilZPass: THREE.ReplaceStencilOp,
+    });
 
     override addListener(event: "change", listener: Function): void {
         super.addListener(event, listener);
@@ -64,7 +65,6 @@ export class Plane extends EventEmitter {
     }
 
     SetVisibility(visible: boolean) {
-        this._visible = visible;
         this.cutPlane.visible = visible;
         this.stencilGroup.visible = visible;
 
@@ -80,7 +80,8 @@ export class Plane extends EventEmitter {
             if (obj.material != undefined) {
                 (obj.material as THREE.Material).clippingPlanes = threePlanes;
             }
-        })
+        });
+        this.planeManager.ClipIntersection(this.planeManager.clipIntersection);
         this.emit("change");
     }
 
@@ -96,6 +97,7 @@ export class Plane extends EventEmitter {
 
     SetOffset(offset: number) {
         this.plane.constant = offset;
+        this.planeManager.ClipIntersection(this.planeManager.clipIntersection);
         this.emit("change");
     }
 

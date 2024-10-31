@@ -1,5 +1,5 @@
 import * as occtimportjs from "occt-import-js";
-import * as THREE from "three";
+import { BufferAttribute, BufferGeometry, Color, Float32BufferAttribute, Group, Material, Mesh, MeshPhysicalMaterial, Object3D, ObjectLoader } from "three";
 import { BufferGeometryUtils } from "three/examples/jsm/Addons.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
@@ -27,7 +27,7 @@ export class FileManager {
         return this.occt;
     }
 
-    async LoadModelInWorker(url: string, filename: string): Promise<THREE.Object3D> {
+    async LoadModelInWorker(url: string, filename: string): Promise<Object3D> {
         const workerUrl = new URL("./FileManagerWorker", import.meta.url);
         const worker = new Worker(workerUrl, { type: "module" });
         return new Promise((resolve, reject) => {
@@ -43,7 +43,7 @@ export class FileManager {
             }
             worker.onmessage = (e) => {
                 worker.terminate();
-                let object = new THREE.ObjectLoader().parse(e.data);
+                let object = new ObjectLoader().parse(e.data);
                 resolve(object);
             }
             const options = JSON.stringify(this.options);
@@ -51,7 +51,7 @@ export class FileManager {
         })
     }
 
-    async LoadModel(url: string, filename: string): Promise<THREE.Object3D> {
+    async LoadModel(url: string, filename: string): Promise<Object3D> {
         this.materials.length = 0;
         if (/(.(stp|STEP|step)$)/.test(filename!)) {
             console.log(/(.(stp|STEP|step)$)/.exec(filename!)![2]);
@@ -81,7 +81,7 @@ export class FileManager {
         else return null;
     }
 
-    private async LoadCADModel(url: string, fn: Function): Promise<THREE.Object3D> {
+    private async LoadCADModel(url: string, fn: Function): Promise<Object3D> {
         return fetch(url)
             .then(response => {
                 return response.arrayBuffer()
@@ -103,11 +103,11 @@ export class FileManager {
             })
     }
 
-    private materials: THREE.MeshPhysicalMaterial[] = [];
+    private materials: MeshPhysicalMaterial[] = [];
 
-    private CreateModel(res: any, data: any, i = 0, root?: THREE.Object3D): THREE.Object3D {
+    private CreateModel(res: any, data: any, i = 0, root?: Object3D): Object3D {
         i++;
-        let obj = new THREE.Object3D();
+        let obj = new Object3D();
         if (root != undefined)
             root?.add(obj);
         else root = obj;
@@ -117,20 +117,20 @@ export class FileManager {
         if (data.meshes.length != 0) {
             for (let j = 0; j < data.meshes.length; j++) {
                 i++;
-                let geom = new THREE.BufferGeometry();
-                geom.setAttribute('position', new THREE.Float32BufferAttribute(res.meshes[data.meshes[j]].attributes.position.array, 3));
+                let geom = new BufferGeometry();
+                geom.setAttribute('position', new Float32BufferAttribute(res.meshes[data.meshes[j]].attributes.position.array, 3));
                 if (res.meshes[data.meshes[j]].attributes.normal)
-                    geom.setAttribute('normal', new THREE.Float32BufferAttribute(res.meshes[data.meshes[j]].attributes.normal.array, 3));
+                    geom.setAttribute('normal', new Float32BufferAttribute(res.meshes[data.meshes[j]].attributes.normal.array, 3));
                 let index = Uint32Array.from(res.meshes[data.meshes[j]].index.array);
-                geom.setIndex(new THREE.BufferAttribute(index, 1));
-                let color = new THREE.Color(0xffffff);
+                geom.setIndex(new BufferAttribute(index, 1));
+                let color = new Color(0xffffff);
                 if (res.meshes[data.meshes[j]].color != undefined) {
                     let colorArray = res.meshes[data.meshes[j]].color;
-                    color = new THREE.Color(colorArray[0], colorArray[1], colorArray[2]);
+                    color = new Color(colorArray[0], colorArray[1], colorArray[2]);
                 }
                 let mat = this.materials.find(m => m.color.getHexString() == color.getHexString());
                 if (mat == undefined) {
-                    mat = new THREE.MeshPhysicalMaterial({ color: color, roughness: 0.6, metalness: 0.3 });
+                    mat = new MeshPhysicalMaterial({ color: color, roughness: 0.6, metalness: 0.3 });
                     this.materials.push(mat);
                 }
                 let faceColorArray = new Array(geom.attributes['position'].count).fill(0);
@@ -145,8 +145,8 @@ export class FileManager {
                     }
                 }
                 if (mat.vertexColors)
-                    geom.setAttribute('color', new THREE.Float32BufferAttribute(faceColorArray, 3));
-                let mesh = new THREE.Mesh(geom, mat);
+                    geom.setAttribute('color', new Float32BufferAttribute(faceColorArray, 3));
+                let mesh = new Mesh(geom, mat);
                 if (res.meshes[data.meshes[j]].name != "")
                     mesh.name = `${res.meshes[data.meshes[j]].name}_${mesh.id}`;
                 else mesh.name = `Mesh_${mesh.id}`;
@@ -161,7 +161,7 @@ export class FileManager {
         return root;
     }
 
-    private async LoadGLTFModel(url: string): Promise<THREE.Object3D> {
+    private async LoadGLTFModel(url: string): Promise<Object3D> {
         let loader = new GLTFLoader();
         return new Promise((resolve, reject) => {
             loader.loadAsync(
@@ -190,16 +190,16 @@ export class FileManager {
         })
     }
 
-    private _mergeGeometryGroups(object: THREE.Object3D) {
+    private _mergeGeometryGroups(object: Object3D) {
         object.traverse(obj => {
-            const group = obj as THREE.Group;
+            const group = obj as Group;
             if (group.isGroup != undefined && group.isGroup) {
 
-                const geom: Set<THREE.BufferGeometry> = new Set();
-                let material: THREE.Material | THREE.Material[] | null = null;
+                const geom: Set<BufferGeometry> = new Set();
+                let material: Material | Material[] | null = null;
 
                 group.children.forEach(child => {
-                    const mesh = child as THREE.Mesh;
+                    const mesh = child as Mesh;
                     if (mesh.isMesh != undefined && mesh.isMesh) {
                         if (!geom.has(mesh.geometry)) {
                             geom.add(mesh.geometry);
@@ -220,7 +220,7 @@ export class FileManager {
                 geom.forEach(g => g.dispose());
                 group.children = [];
 
-                const resultMesh = new THREE.Mesh(resultGeom, material);
+                const resultMesh = new Mesh(resultGeom, material);
                 resultMesh.name = group.name;
                 group.add(resultMesh);
             }

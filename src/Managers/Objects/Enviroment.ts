@@ -1,5 +1,5 @@
+import { ACESFilmicToneMapping, AgXToneMapping, CineonToneMapping, Color, DataTexture, EquirectangularReflectionMapping, Euler, LinearToneMapping, NeutralToneMapping, ReinhardToneMapping, WebGLRenderer } from "three";
 import type { Viewer } from "../../Viewer";
-import * as THREE from "three"
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
 export enum BackgroundType {
@@ -25,10 +25,10 @@ export class Enviroment {
 
     private viewer: Viewer;
 
-    private _color: THREE.Color = new THREE.Color(0xAAAAAA);
+    private _color: Color = new Color(0xAAAAAA);
     get color(): string { return `#${this._color.getHexString()}`; };
 
-    private _texture: THREE.DataTexture | null = null;
+    private _texture: DataTexture | null = null;
     get texture() { return this._texture; };
 
     private _type: BackgroundType = BackgroundType.color;
@@ -37,8 +37,8 @@ export class Enviroment {
     private _isReflectionMapEnabled: boolean = false;
     get isReflectionMapEnabled() { return this._isReflectionMapEnabled; };
 
-    get exposure(): number { return (this.viewer.renderer as THREE.WebGLRenderer).toneMappingExposure; };
-    set exposure(value: number) { (this.viewer.renderer as THREE.WebGLRenderer).toneMappingExposure = value; };
+    get exposure(): number { return (this.viewer.renderer as WebGLRenderer).toneMappingExposure; };
+    set exposure(value: number) { (this.viewer.renderer as WebGLRenderer).toneMappingExposure = value; };
 
     private _toneMapping = ToneMapping.neutral;
     get toneMapping(): ToneMapping { return this._toneMapping; };
@@ -50,8 +50,8 @@ export class Enviroment {
     get backgroundBlurriness(): number { return this.viewer.sceneManager.scene.backgroundBlurriness; };
     set backgroundBlurriness(value: number) { this.viewer.sceneManager.scene.backgroundBlurriness = value; };
 
-    get backgroundRotation(): THREE.Euler { return this.viewer.sceneManager.scene.backgroundRotation; };
-    set backgroundRotation(value: THREE.Euler) {
+    get backgroundRotation(): Euler { return this.viewer.sceneManager.scene.backgroundRotation; };
+    set backgroundRotation(value: Euler) {
         this.viewer.sceneManager.scene.backgroundRotation = value;
         this.viewer.sceneManager.scene.environmentRotation = value;
     };
@@ -66,7 +66,7 @@ export class Enviroment {
         this._type = BackgroundType.color;
     }
 
-    SetBackgroundImage(texture: THREE.DataTexture | null = null) {
+    SetBackgroundImage(texture: DataTexture | null = null) {
         if (texture == null)
             texture = this.texture;
         if (texture == null)
@@ -89,31 +89,31 @@ export class Enviroment {
         if (envMap != undefined) {
             this.disposeTexture();
 
-            envMap.mapping = THREE.EquirectangularReflectionMapping;
+            envMap.mapping = EquirectangularReflectionMapping;
             this.SetBackgroundImage(envMap);
         }
     }
 
     private _changeToneMapping(tone: ToneMapping) {
-        const renderer = this.viewer.renderer as THREE.WebGLRenderer;
+        const renderer = this.viewer.renderer as WebGLRenderer;
         switch (tone) {
             case ToneMapping.ACESFilmic:
-                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMapping = ACESFilmicToneMapping;
                 break;
             case ToneMapping.AgX:
-                renderer.toneMapping = THREE.AgXToneMapping;
+                renderer.toneMapping = AgXToneMapping;
                 break;
             case ToneMapping.Reinhard:
-                renderer.toneMapping = THREE.ReinhardToneMapping;
+                renderer.toneMapping = ReinhardToneMapping;
                 break;
             case ToneMapping.cineon:
-                renderer.toneMapping = THREE.CineonToneMapping;
+                renderer.toneMapping = CineonToneMapping;
                 break;
             case ToneMapping.linear:
-                renderer.toneMapping = THREE.LinearToneMapping;
+                renderer.toneMapping = LinearToneMapping;
                 break;
             case ToneMapping.neutral:
-                renderer.toneMapping = THREE.NeutralToneMapping;
+                renderer.toneMapping = NeutralToneMapping;
                 break;
         }
         this._toneMapping = tone;

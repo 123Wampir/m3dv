@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Box3, DoubleSide, Mesh, MeshToonMaterial, Object3D, Sphere, Vector3 } from "three";
 import { EventEmitter } from "../Event/Event";
 import { ViewType } from "./Appearance";
 import { MaterialManager } from "./MaterialManager";
@@ -27,10 +27,10 @@ export class ModelManager extends EventEmitter {
     }
 
     readonly materialManager: MaterialManager;
-    private defaultPositions: Map<THREE.Object3D, THREE.Vector3> = new Map();
-    private _model: THREE.Object3D = new THREE.Object3D();
+    private defaultPositions: Map<Object3D, Vector3> = new Map();
+    private _model: Object3D = new Object3D();
     get model() { return this._model; };
-    SetModel(model: THREE.Object3D) {
+    SetModel(model: Object3D) {
         this.Dispose();
         this.model.add(model);
         this.model.rotation.x = 0;
@@ -66,11 +66,11 @@ export class ModelManager extends EventEmitter {
         })
     }
 
-    GetDefaultPosition(model: THREE.Object3D) {
+    GetDefaultPosition(model: Object3D) {
         return this.defaultPositions.get(model);
     }
 
-    GetBounding(type: BoundingType, view: ViewType = ViewType.default): THREE.Box3 | THREE.Sphere {
+    GetBounding(type: BoundingType, view: ViewType = ViewType.default): Box3 | Sphere {
         switch (type) {
             case BoundingType.box:
                 return this.getBoundingBox(view);
@@ -79,15 +79,15 @@ export class ModelManager extends EventEmitter {
         }
     }
 
-    private getBoundingBox(view: ViewType): THREE.Box3 {
+    private getBoundingBox(view: ViewType): Box3 {
         switch (view) {
             case ViewType.default:
                 return this.calculateBounding(this.model).bbox;
             case ViewType.isolated:
-                const box3 = new THREE.Box3();
+                const box3 = new Box3();
                 this.model.traverseVisible(object => {
                     if (object.layers.isEnabled(1)) {
-                        const box = new THREE.Box3().setFromObject(object);
+                        const box = new Box3().setFromObject(object);
                         box3.union(box);
                     }
                 })
@@ -95,19 +95,19 @@ export class ModelManager extends EventEmitter {
         }
     }
 
-    private getBoundingSphere(view: ViewType): THREE.Sphere {
+    private getBoundingSphere(view: ViewType): Sphere {
         switch (view) {
             case ViewType.default:
                 return this.calculateBounding(this.model).bsphere;
             case ViewType.isolated:
-                const box3 = new THREE.Box3();
+                const box3 = new Box3();
                 this.model.traverseVisible(object => {
                     if (object.layers.isEnabled(1)) {
-                        const box = new THREE.Box3().setFromObject(object);
+                        const box = new Box3().setFromObject(object);
                         box3.union(box);
                     }
                 })
-                const sphere = new THREE.Sphere;
+                const sphere = new Sphere;
                 return box3.getBoundingSphere(sphere);
         }
     }
@@ -122,18 +122,18 @@ export class ModelManager extends EventEmitter {
         this.model.traverse(obj => {
             if ((obj as any).material != undefined) {
                 let mesh = obj as any;
-                // let material = new THREE.MeshPhysicalMaterial({
+                // let material = new MeshPhysicalMaterial({
                 //     color: mesh.material.color,
                 //     metalness: mesh.material.metalness,
                 //     roughness: mesh.material.roughness,
                 //     opacity: mesh.material.opacity,
                 //     transparent: mesh.material.transparent,
-                //     side: THREE.FrontSide,
-                //     shadowSide: THREE.BackSide,
+                //     side: FrontSide,
+                //     shadowSide: BackSide,
                 // });
-                let material = new THREE.MeshToonMaterial({
+                let material = new MeshToonMaterial({
                     color: mesh.material.color,
-                    side: THREE.DoubleSide,
+                    side: DoubleSide,
                 });
                 mesh.material = material;
                 if (mesh.geometry.hasAttribute('color')) {
@@ -141,7 +141,7 @@ export class ModelManager extends EventEmitter {
                 }
                 mesh.receiveShadow = true;
                 mesh.castShadow = true;
-                (mesh as THREE.Mesh).onBeforeRender = function (renderer, scene, camera, geometry, material) {
+                (mesh as Mesh).onBeforeRender = function (renderer, scene, camera, geometry, material) {
                     if (material.opacity != 1)
                         material.transparent = true;
                     else material.transparent = false;
@@ -159,28 +159,28 @@ export class ModelManager extends EventEmitter {
         })
     }
 
-    private fixMeshPivot(model: THREE.Object3D) {
+    private fixMeshPivot(model: Object3D) {
         // Due to the shared geometry, we need to keep the centers of the geometries relative to the Mesh
-        const centers = new Map<THREE.Mesh, THREE.Vector3>();
+        const centers = new Map<Mesh, Vector3>();
         model.traverse(obj => {
             obj.updateWorldMatrix(false, true);
             obj.updateMatrix();
-            const mesh = obj as THREE.Mesh;
+            const mesh = obj as Mesh;
             if (mesh.isMesh != undefined && mesh.isMesh) {
                 const geometry = mesh.geometry;
                 geometry.computeBoundingBox();
-                const center = new THREE.Vector3();
+                const center = new Vector3();
                 geometry.boundingBox?.getCenter(center);
                 centers.set(mesh, center);
             }
         })
         model.traverse(obj => {
-            const mesh = obj as THREE.Mesh;
+            const mesh = obj as Mesh;
             if (mesh.isMesh != undefined && mesh.isMesh) {
                 const geometry = mesh.geometry;
                 geometry.center();
                 const center = centers.get(mesh);
-                const newCenter = new THREE.Vector3();
+                const newCenter = new Vector3();
                 geometry.boundingBox.getCenter(newCenter);
                 const offset = newCenter.clone().sub(center).applyQuaternion(mesh.quaternion);
                 mesh.position.sub(offset);
@@ -199,15 +199,15 @@ export class ModelManager extends EventEmitter {
         this.model.updateMatrixWorld(true);
         const result = this.calculateBounding(this.model);
         const bbox = result.bbox;
-        const center = new THREE.Vector3();
+        const center = new Vector3();
         bbox.getCenter(center).negate();
         center.y = -bbox.min.y;
         this.model.position.set(center.x, center.y, center.z);
     }
 
-    private calculateBounding(object: THREE.Object3D) {
-        const bbox = new THREE.Box3().setFromObject(object);
-        const bsphere = new THREE.Sphere();
+    private calculateBounding(object: Object3D) {
+        const bbox = new Box3().setFromObject(object);
+        const bsphere = new Sphere();
         bbox.getBoundingSphere(bsphere);
         return { bbox, bsphere };
     }

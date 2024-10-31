@@ -1,14 +1,14 @@
-import * as THREE from "three";
 import type { Viewer } from "../Viewer";
 import { EventEmitter } from "../Event/Event";
 import { BoundingType } from "./ModelManager";
 import { ViewType } from "./Appearance";
+import { Box3, Color, Mesh, MeshToonMaterial, Object3D, Raycaster, Sphere, Vector2 } from "three";
 
 export class SelectionManager extends EventEmitter {
     constructor(viewer: Viewer, color: number = 0x0099FF) {
         super();
         this.viewer = viewer;
-        this._selectedMaterial.emissive = new THREE.Color(color);
+        this._selectedMaterial.emissive = new Color(color);
         this.viewer.controls.orbitControls.addEventListener('change', e => this.selectionEnabled = false);
         this.viewer.controls.trackballControls.addEventListener('change', e => this.selectionEnabled = false);
         this.viewer.renderer.domElement.addEventListener("click", e => this.onClickCallback(e));
@@ -17,12 +17,12 @@ export class SelectionManager extends EventEmitter {
     allowMultiple = false;
     readonly filters: string[] = [];
     get selectionColor() { return this._selectedMaterial.emissive; };
-    get target(): readonly THREE.Object3D[] { return Array.from(this._target); };
+    get target(): readonly Object3D[] { return Array.from(this._target); };
 
     private selectionEnabled = false;
     private readonly viewer: Viewer;
-    private readonly _target: Set<THREE.Object3D> = new Set();
-    private _selectedMaterial = new THREE.MeshToonMaterial();
+    private readonly _target: Set<Object3D> = new Set();
+    private _selectedMaterial = new MeshToonMaterial();
 
     override addListener(event: "change", listener: Function): void {
         super.addListener(event, listener);
@@ -31,7 +31,7 @@ export class SelectionManager extends EventEmitter {
         super.emit(event, ...any);
     }
 
-    Select(object?: THREE.Object3D) {
+    Select(object?: Object3D) {
         console.log(object);
 
         if (!this.allowMultiple) {
@@ -49,7 +49,7 @@ export class SelectionManager extends EventEmitter {
     }
     ShowSelected() {
         this._target.forEach(obj => obj.traverse(item => {
-            const mesh = item as THREE.Mesh;
+            const mesh = item as Mesh;
             if (mesh.isMesh != undefined && mesh.isMesh) {
                 mesh.material = this._selectedMaterial;
             }
@@ -58,7 +58,7 @@ export class SelectionManager extends EventEmitter {
 
     HideSelected() {
         this._target.forEach(obj => obj.traverse(item => {
-            const mesh = item as THREE.Mesh;
+            const mesh = item as Mesh;
             if (mesh.isMesh != undefined && mesh.isMesh) {
                 mesh.material = this.viewer.sceneManager.modelManager.materialManager.GetMaterial(mesh);
             }
@@ -66,10 +66,10 @@ export class SelectionManager extends EventEmitter {
     }
 
     SetSelectionColor(color: number | string) {
-        this._selectedMaterial.emissive = new THREE.Color(color);
+        this._selectedMaterial.emissive = new Color(color);
     }
 
-    GetBounding(type: BoundingType): THREE.Box3 | THREE.Sphere {
+    GetBounding(type: BoundingType): Box3 | Sphere {
         switch (type) {
             case BoundingType.box:
                 return this.GetBoundingBox();
@@ -78,28 +78,28 @@ export class SelectionManager extends EventEmitter {
         }
     }
 
-    private GetBoundingBox(): THREE.Box3 {
-        const box3 = new THREE.Box3();
+    private GetBoundingBox(): Box3 {
+        const box3 = new Box3();
         this._target.forEach(object => {
-            const box = new THREE.Box3().setFromObject(object);
+            const box = new Box3().setFromObject(object);
             box3.union(box);
         })
         return box3;
     }
 
-    private GetBoundingSphere(): THREE.Sphere {
-        const box3 = new THREE.Box3();
+    private GetBoundingSphere(): Sphere {
+        const box3 = new Box3();
         this._target.forEach(object => {
-            const box = new THREE.Box3().setFromObject(object);
+            const box = new Box3().setFromObject(object);
             box3.union(box);
         })
-        const sphere = new THREE.Sphere;
+        const sphere = new Sphere;
         return box3.getBoundingSphere(sphere);
     }
 
     private onClickCallback(event: MouseEvent) {
         if (this.selectionEnabled) {
-            const pointer = new THREE.Vector2();
+            const pointer = new Vector2();
             pointer.x = (event.offsetX / this.viewer.renderer.domElement.clientWidth) * 2 - 1;
             pointer.y = - (event.offsetY / this.viewer.renderer.domElement.clientHeight) * 2 + 1;
             this.allowMultiple = event.shiftKey;
@@ -111,8 +111,8 @@ export class SelectionManager extends EventEmitter {
         else this.selectionEnabled = true;
     }
 
-    private FindIntersection(pointer: THREE.Vector2): THREE.Object3D | undefined {
-        let raycaster = new THREE.Raycaster();
+    private FindIntersection(pointer: Vector2): Object3D | undefined {
+        let raycaster = new Raycaster();
         if (this.viewer.appearance.viewType == ViewType.isolated)
             raycaster.layers.set(1);
         raycaster.setFromCamera(pointer, this.viewer.appearance.camera);

@@ -1,6 +1,6 @@
+import { Material, Mesh } from "three";
 import { EventEmitter } from "../Event/Event";
 import { ModelManager } from "./ModelManager";
-import * as THREE from "three";
 
 
 export class MaterialManager extends EventEmitter {
@@ -11,17 +11,17 @@ export class MaterialManager extends EventEmitter {
     }
 
     private readonly modelManager: ModelManager;
-    private readonly materials: Set<THREE.Material> = new Set<THREE.Material>();
+    private readonly materials: Set<Material> = new Set<Material>();
 
-    private modelMaterials: Map<THREE.Mesh, THREE.Material> = new Map();
+    private modelMaterials: Map<Mesh, Material> = new Map();
 
     LoadMaterialsFromModel() {
         this.materials.clear();
         this.modelMaterials.clear();
         this.modelManager.model.traverse(object => {
-            const mesh = object as THREE.Mesh;
+            const mesh = object as Mesh;
             if (mesh.isMesh != undefined && mesh.isMesh) {
-                const material = mesh.material as THREE.Material;
+                const material = mesh.material as Material;
                 this.AddMaterial(material);
                 this.modelMaterials.set(mesh, material);
             }
@@ -29,29 +29,29 @@ export class MaterialManager extends EventEmitter {
         console.log(this.materials);
     }
 
-    Has(material: THREE.Material): boolean {
+    Has(material: Material): boolean {
         return this.materials.has(material);
     }
 
-    GetMaterials(): readonly THREE.Material[] {
+    GetMaterials(): readonly Material[] {
         return Array.from(this.materials.values());
     }
 
-    GetMaterial(mesh: THREE.Mesh): THREE.Material {
+    GetMaterial(mesh: Mesh): Material {
         return this.modelMaterials.get(mesh);
     }
 
-    AddMaterial(material: THREE.Material) {
+    AddMaterial(material: Material) {
         if (!this.materials.has(material))
             this.materials.add(material);
     }
 
-    SetMaterial(mesh: THREE.Mesh, material: THREE.Material) {
+    SetMaterial(mesh: Mesh, material: Material) {
         this.AddMaterial(material);
         this.modelMaterials.set(mesh, material);
     }
 
-    DeleteMaterial(material: THREE.Material) {
+    DeleteMaterial(material: Material) {
         this.modelMaterials.forEach((v, k) => {
             if (v == material) {
                 console.warn(`Can't delete material because it's used by object: name: ${k.name}; uuid: ${k.uuid}`);
@@ -63,7 +63,7 @@ export class MaterialManager extends EventEmitter {
         }
     }
 
-    ReplaceMaterial(oldMaterial: THREE.Material, newMaterial: THREE.Material) {
+    ReplaceMaterial(oldMaterial: Material, newMaterial: Material) {
         this.AddMaterial(newMaterial);
         this.modelMaterials.forEach((v, k) => {
             if (v == oldMaterial) {

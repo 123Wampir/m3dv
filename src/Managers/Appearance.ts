@@ -1,5 +1,4 @@
 import { EventEmitter } from "../Event/Event";
-import * as THREE from "three";
 import { EffectComposer, OutputPass } from "three/examples/jsm/Addons.js";
 import { Enviroment } from "./Objects/Enviroment";
 import { Viewer } from "../Viewer";
@@ -8,6 +7,7 @@ import { Effects } from "./Effects/Effects";
 import { ComputeVolume } from "../Utils/Math";
 import { BoundingType } from "./ModelManager";
 import { RenderPass } from "./Effects/Passes/RenderPass";
+import { Camera, Object3D, OrthographicCamera, PerspectiveCamera, Sphere, Vector3, WebGLRenderer } from "three";
 
 export enum ViewType {
     default,
@@ -30,10 +30,10 @@ export class Appearance extends EventEmitter {
         super();
 
         this.viewer = viewer;
-        this.composer = new EffectComposer(viewer.renderer as THREE.WebGLRenderer);
+        this.composer = new EffectComposer(viewer.renderer as WebGLRenderer);
 
         this.SetCameraType(CameraType.perspective);
-        this.SetCameraPos(new THREE.Vector3(5, 5, 5));
+        this.SetCameraPos(new Vector3(5, 5, 5));
         this._addDefaultPasses();
 
         this.enviroment = new Enviroment(viewer);
@@ -69,7 +69,7 @@ export class Appearance extends EventEmitter {
     }
 
     private _noSmallParts = false;
-    private _smallParts: Map<THREE.Object3D, boolean> = new Map();
+    private _smallParts: Map<Object3D, boolean> = new Map();
     private _setSmallParts() {
         const model = this.viewer.sceneManager.modelManager.model;
         this._smallParts.clear();
@@ -109,13 +109,13 @@ export class Appearance extends EventEmitter {
     private _viewType: ViewType = ViewType.default;
     get viewType() { return this._viewType; };
 
-    private _camera: THREE.Camera;
+    private _camera: Camera;
     get camera() { return this._camera; };
     private _cameraType: CameraType = CameraType.perspective;
     get cameraType() { return this._cameraType; };
 
-    private readonly perspectiveCamera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(60, 16 / 9, 1e-4, 1e4);
-    private readonly orthographicCamera: THREE.OrthographicCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1e-4, 1e4);
+    private readonly perspectiveCamera: PerspectiveCamera = new PerspectiveCamera(60, 16 / 9, 1e-4, 1e4);
+    private readonly orthographicCamera: OrthographicCamera = new OrthographicCamera(-1, 1, 1, -1, 1e-4, 1e4);
 
 
     Render() {
@@ -151,7 +151,7 @@ export class Appearance extends EventEmitter {
         this._viewType = view;
     }
 
-    SetCameraPos(vec: THREE.Vector3) {
+    SetCameraPos(vec: Vector3) {
         this.perspectiveCamera.position.copy(vec);
     }
 
@@ -168,19 +168,19 @@ export class Appearance extends EventEmitter {
     }
 
     FitInView(type: ViewFitType = ViewFitType.model) {
-        let bsphere = new THREE.Sphere();
+        let bsphere = new Sphere();
         switch (type) {
             case ViewFitType.model:
-                bsphere = this.viewer.sceneManager.modelManager.GetBounding(BoundingType.sphere, ViewType.default) as THREE.Sphere;
+                bsphere = this.viewer.sceneManager.modelManager.GetBounding(BoundingType.sphere, ViewType.default) as Sphere;
                 break;
             case ViewFitType.isolated:
-                bsphere = this.viewer.sceneManager.modelManager.GetBounding(BoundingType.sphere, ViewType.isolated) as THREE.Sphere;
+                bsphere = this.viewer.sceneManager.modelManager.GetBounding(BoundingType.sphere, ViewType.isolated) as Sphere;
                 break;
             case ViewFitType.selected:
-                bsphere = this.viewer.selectionManager.GetBounding(BoundingType.sphere) as THREE.Sphere;
+                bsphere = this.viewer.selectionManager.GetBounding(BoundingType.sphere) as Sphere;
         }
         this.viewer.controls.GetCameraControl().target.copy(bsphere.center);
-        const direction = new THREE.Vector3();
+        const direction = new Vector3();
         this.camera.getWorldDirection(direction);
         const finishPosition = bsphere.center.clone().add(direction.negate().normalize().multiplyScalar(bsphere.radius * 2));
         this.SetCameraPos(finishPosition);
@@ -222,7 +222,7 @@ export class Appearance extends EventEmitter {
     }
     private _updateNearFarCameraPlanes() {
         const viewer = this as any as Viewer;
-        const bsphere = viewer.sceneManager.modelManager.GetBounding(BoundingType.sphere, ViewType.default) as THREE.Sphere;
+        const bsphere = viewer.sceneManager.modelManager.GetBounding(BoundingType.sphere, ViewType.default) as Sphere;
         const far = bsphere.radius * 100;
         const near = bsphere.radius / 100;
         viewer.appearance.perspectiveCamera.far = far;

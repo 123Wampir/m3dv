@@ -3,6 +3,7 @@ import { PlaneManager } from "./PlaneManager"
 import { EventEmitter } from '../../Event/Event';
 import {
     AlwaysStencilFunc, BackSide, Box3, BufferGeometry, DecrementWrapStencilOp,
+    DoubleSide,
     FrontSide, Group, IncrementWrapStencilOp, Material, Mesh, MeshBasicMaterial,
     NotEqualStencilFunc, PlaneGeometry, PlaneHelper, ReplaceStencilOp, Sphere, Plane as ThreePlane
 } from 'three';
@@ -14,6 +15,8 @@ export class Plane extends EventEmitter {
         this.plane = plane;
         this.planeManager = planeManager;
         this.helper = new PlaneHelper(this.plane);
+        (this.helper.material as Material).visible = false;
+        (this.helperPlane.material as Material).side = DoubleSide;
         this.helper.visible = false;
         this._order = this.planeManager.planes.length + 1;
 
@@ -49,7 +52,9 @@ export class Plane extends EventEmitter {
     get max() { return this._max; };
     get order() { return this._order; };
     get offset() { return this.plane.constant; };
-    get visible() { return this.cutPlane.visible; }
+    get visible() { return this.cutPlane.visible; };
+    get showHelper() { return this.helper.visible; };
+    get helperPlane() { return this.helper.children.at(0) as Mesh; };
 
     readonly planeMaterial = new MeshBasicMaterial({
         color: 0xfff000,
@@ -74,11 +79,13 @@ export class Plane extends EventEmitter {
 
         const threePlanes = this.planeManager.GetThreePlanes();
 
-        if (!this.planeManager.clipIntersection)
+        if (!this.planeManager.clipIntersection) {
             this.planeManager.planes.forEach(plane => {
-                (plane.cutPlane.material as Material).clippingPlanes =
-                    threePlanes.filter((p) => p != plane.plane);
-            })
+                const planes = threePlanes.filter((p) => p != plane.plane);
+                (plane.cutPlane.material as Material).clippingPlanes = planes;
+                (plane.helperPlane.material as Material).clippingPlanes = planes;
+            });
+        }
         this.planeManager.included.forEach(item => {
             const obj = (item as any);
             if (obj.material != undefined) {
@@ -87,6 +94,10 @@ export class Plane extends EventEmitter {
         });
         this.planeManager.ClipIntersection(this.planeManager.clipIntersection);
         this.emit("change");
+    }
+
+    ShowHelper(value: boolean) {
+        this.helper.visible = value;
     }
 
     Invert() {

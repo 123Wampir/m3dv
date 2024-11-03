@@ -141,6 +141,7 @@ export class PlaneManager extends EventEmitter {
                 }
             }
             mat.clippingPlanes = planes;
+            (plane.helperPlane.material as Material).clippingPlanes = planes;
         })
 
         this._clipIntersection = value;
@@ -179,6 +180,11 @@ export class PlaneManager extends EventEmitter {
         });
         this._type = SectionFillType.image;
         this._texture = texture;
+    }
+
+    RemoveSectionFillImage() {
+        this.SetSectionFillColor();
+        this.disposeTexture();
     }
 
     async LoadSectionFillImage(url: string) {

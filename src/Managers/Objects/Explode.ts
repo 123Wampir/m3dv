@@ -7,7 +7,8 @@ export enum ExplodeType {
 }
 
 export class Explode {
-    type: ExplodeType = ExplodeType.simple;
+    private _type: ExplodeType = ExplodeType.simple;
+    get type() { return this._type; };
 
     private model!: Object3D;
     private startPos: Map<Object3D, Vector3> = new Map();
@@ -23,12 +24,12 @@ export class Explode {
     }
 
 
-    InitExplode(model: Object3D, type: ExplodeType = this.type) {
+    InitExplode(model: Object3D, type: ExplodeType = ExplodeType.simple) {
         this.Reset();
 
         this.SetExplodeObject(model);
 
-        this.type = type;
+        this._type = type;
 
         switch (type) {
             case ExplodeType.simple:

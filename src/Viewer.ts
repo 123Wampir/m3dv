@@ -156,7 +156,7 @@ export class Viewer extends EventEmitter {
     private resetScene() {
         this.appearance.Reset();
         this.sceneManager.planeManager.Update();
-        this.explodeView.InitExplode(this.sceneManager.modelManager.model, ExplodeType.phased);
+        this.explodeView.InitExplode(this.sceneManager.modelManager.model, this.explodeView.type);
         this.appearance.FitInView(ViewFitType.model);
     }
 }

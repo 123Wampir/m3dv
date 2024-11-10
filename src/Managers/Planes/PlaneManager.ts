@@ -1,7 +1,8 @@
 import { EventEmitter } from "../../Event/Event";
 import { Plane } from "./Plane";
 import { SceneManager } from "../SceneManager";
-import { Color, Group, Material, Mesh, Object3D, Texture, Vector3, Plane as ThreePlane, RepeatWrapping, TextureLoader } from "three";
+import { Color, Group, Material, Mesh, Object3D, Texture, Vector3, Plane as ThreePlane, RepeatWrapping, TextureLoader, BufferGeometry } from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 
 export enum SectionFillType {
@@ -35,6 +36,9 @@ export class PlaneManager extends EventEmitter {
     private readonly cutPlanesGroup: Group = new Group();
     private readonly stencilGroup: Group = new Group();
 
+    private _stencilGeometry: BufferGeometry | null = null;
+    get stencilGeometry(): null | BufferGeometry { return this._stencilGeometry; };
+
     private readonly _planes: Plane[] = [];
     private _clipIntersection: boolean = false;
     private readonly _included: Set<Object3D> = new Set();
@@ -57,6 +61,7 @@ export class PlaneManager extends EventEmitter {
         if (this._planes.length != 0) {
             this._included.clear();
             this.Include(this.GetModel());
+            this.GenerateStencilMesh();
             this._planes.forEach(p => p.Update());
         }
         else this.InitPlanes();
@@ -71,6 +76,27 @@ export class PlaneManager extends EventEmitter {
         this.AddPlane("x", new Vector3(-1, 0, 0));
         this.AddPlane("y", new Vector3(0, -1, 0));
         this.AddPlane("z", new Vector3(0, 0, -1));
+    }
+
+    GenerateStencilMesh() {
+        const geometries: BufferGeometry[] = [];
+        this.included.forEach(item => {
+            if ((item as any).geometry != undefined) {
+                let geom = (item as any).geometry as BufferGeometry;
+                geom = geom.clone();
+                item.updateMatrixWorld(true);
+                geom.applyMatrix4(item.matrixWorld);
+                if (geom.index != null)
+                    geom = geom.toNonIndexed();
+                if (geom.hasAttribute("color"))
+                    geom.deleteAttribute("color");
+                geometries.push(geom);
+            }
+        })
+        this._stencilGeometry = mergeGeometries(geometries);
+        geometries.forEach(item => item.dispose());
+        geometries.length = 0;
+        return this._stencilGeometry;
     }
 
     AddPlane(name: string, normal: Vector3): Plane {

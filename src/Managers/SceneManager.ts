@@ -3,6 +3,7 @@ import { EventEmitter } from "../Event/Event";
 import { Viewer } from "../Viewer";
 import { PlaneManager } from "./Planes/PlaneManager";
 import { AxesHelper, DirectionalLight, Group, Light, Scene } from "three";
+import { Explode } from "../m3dv";
 
 
 export class SceneManager extends EventEmitter {
@@ -28,6 +29,7 @@ export class SceneManager extends EventEmitter {
 
     readonly modelManager: ModelManager = new ModelManager();
     readonly planeManager: PlaneManager;
+    readonly explodeView: Explode = new Explode();
     private readonly viewer: Viewer;
     private serviceGroup: Group = new Group();
     private _scene: Scene = new Scene();

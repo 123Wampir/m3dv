@@ -1,7 +1,6 @@
 import { SceneManager } from "./Managers/SceneManager";
 import { SelectionManager } from "./Managers/SelectionManager";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { Explode, ExplodeType } from "./Managers/Objects/Explode";
 import { Object3D, Renderer, Scene, WebGLRenderer, ObjectLoader } from "three";
 import { Appearance, ViewFitType, ViewType } from "./Managers/Appearance";
 import { Controls } from "./Managers/Controls";
@@ -45,7 +44,6 @@ export class Viewer extends EventEmitter {
     readonly appearance: Appearance;
     readonly controls: Controls;
 
-    readonly explodeView: Explode = new Explode();
     readonly sceneManager: SceneManager;
     readonly selectionManager: SelectionManager;
     readonly fileManager: FileManager;
@@ -141,14 +139,14 @@ export class Viewer extends EventEmitter {
 
 
     private onUpVectorChange = () => {
-        this.explodeView.InitExplode(this.sceneManager.modelManager.model, this.explodeView.type);
+        this.sceneManager.explodeView.InitExplode(this.sceneManager.modelManager.model, this.sceneManager.explodeView.type);
         this.sceneManager.planeManager.planes.forEach(plane => plane.Update());
         this.appearance.Render();
     }
 
     private onModelLoaded = (object: Object3D) => {
         console.log((this.renderer as WebGLRenderer).info.memory);
-        this.explodeView.Reset();
+        this.sceneManager.explodeView.Reset();
         this.sceneManager.modelManager.SetModel(object);
         this.resetScene();
     }
@@ -156,7 +154,7 @@ export class Viewer extends EventEmitter {
     private resetScene() {
         this.appearance.Reset();
         this.sceneManager.planeManager.Update();
-        this.explodeView.InitExplode(this.sceneManager.modelManager.model, this.explodeView.type);
+        this.sceneManager.explodeView.InitExplode(this.sceneManager.modelManager.model, this.sceneManager.explodeView.type);
         this.appearance.FitInView(ViewFitType.model);
     }
 }

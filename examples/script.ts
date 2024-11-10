@@ -131,7 +131,7 @@ sectionFillMap!.onchange = (e) => {
 
 explode!.oninput = (e) => {
     const value = (e.target as any).value;
-    viewer.explodeView.Explode(value);
+    viewer.sceneManager.explodeView.Explode(value);
     viewer.appearance.Render();
 }
 

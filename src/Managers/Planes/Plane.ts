@@ -160,23 +160,16 @@ export class Plane extends EventEmitter {
     }
 
     private createStencilMesh(): Group {
-        var geometries: BufferGeometry[] = [];
-        this.planeManager.included.forEach(item => {
-            if ((item as any).geometry != undefined) {
-                var geom = (item as any).geometry as BufferGeometry;
-                geom = geom.clone();
-                item.updateMatrixWorld(true);
-                geom.applyMatrix4(item.matrixWorld);
-                if (geom.index != null)
-                    geom = geom.toNonIndexed();
-                if (geom.hasAttribute("color"))
-                    geom.deleteAttribute("color");
-                geometries.push(geom);
-            }
-        })
-        var geometry = mergeGeometries(geometries);
-        geometries.forEach(item => item.dispose());
-        geometries = [];
+        const start = Date.now();
+
+        let geometry = this.planeManager.stencilGeometry;
+        if (geometry == null)
+            geometry = this.planeManager.GenerateStencilMesh();
+
+        const end = Date.now();
+
+        const offset = (end - start) / 1000;
+        console.log(`Elapsed: ${offset} sec`);
 
         const group = new Group();
         const mat1 = new MeshBasicMaterial({

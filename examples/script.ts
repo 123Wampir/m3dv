@@ -1,8 +1,4 @@
-import { CameraType, ViewFitType } from "../src/Managers/Appearance";
-import { ControlsType } from "../src/Managers/Controls";
-import { ToneMapping } from "../src/Managers/Objects/Enviroment";
-// import { Viewer } from "../src/Viewer";
-import { Viewer } from "../src/m3dv"
+import { CameraType, ControlsType, Viewer, ViewFitType, ToneMapping } from "../src/m3dv"
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const wireframe = document.getElementById("wireframe") as HTMLInputElement;
@@ -24,6 +20,8 @@ const exclude = document.getElementById("exclude");
 
 const sectionFillColor = document.getElementById("sectionFillColor") as HTMLInputElement;
 const sectionFillMap = document.getElementById("sectionFillMap") as HTMLInputElement;
+
+const explode = document.getElementById("explode-value") as HTMLInputElement;
 
 const background = document.getElementById("background") as HTMLInputElement;
 const hdr = document.getElementById("hdr") as HTMLInputElement;
@@ -129,6 +127,12 @@ sectionFillMap!.onchange = (e) => {
             viewer.appearance.Render();
         });
     }
+}
+
+explode!.oninput = (e) => {
+    const value = (e.target as any).value;
+    viewer.sceneManager.explodeView.Explode(value);
+    viewer.appearance.Render();
 }
 
 background.oninput = (e) => {

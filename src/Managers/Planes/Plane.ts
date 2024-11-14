@@ -1,20 +1,27 @@
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { PlaneManager } from "./PlaneManager"
-import * as THREE from "three";
 import { EventEmitter } from '../../Event/Event';
+import {
+    AlwaysStencilFunc, BackSide, Box3, BufferGeometry, DecrementWrapStencilOp,
+    DoubleSide,
+    FrontSide, Group, IncrementWrapStencilOp, Material, Mesh, MeshBasicMaterial,
+    NotEqualStencilFunc, PlaneGeometry, PlaneHelper, ReplaceStencilOp, Sphere, Plane as ThreePlane
+} from 'three';
 
 export class Plane extends EventEmitter {
-    constructor(planeManager: PlaneManager, name: string, plane: THREE.Plane) {
+    constructor(planeManager: PlaneManager, name: string, plane: ThreePlane) {
         super();
         this.name = name;
         this.plane = plane;
         this.planeManager = planeManager;
-        this.helper = new THREE.PlaneHelper(this.plane);
+        this.helper = new PlaneHelper(this.plane);
+        (this.helper.material as Material).visible = false;
+        (this.helperPlane.material as Material).side = DoubleSide;
         this.helper.visible = false;
         this._order = this.planeManager.planes.length + 1;
 
-        const planeGeom = new THREE.PlaneGeometry();
-        this.cutPlane = new THREE.Mesh(planeGeom, this.planeMaterial);
+        const planeGeom = new PlaneGeometry();
+        this.cutPlane = new Mesh(planeGeom, this.planeMaterial);
 
         this.cutPlane.onBeforeRender = () => {
             plane.coplanarPoint(this.cutPlane.position);
@@ -33,10 +40,10 @@ export class Plane extends EventEmitter {
     }
     readonly name: string;
     private readonly planeManager: PlaneManager;
-    readonly plane: THREE.Plane;
-    readonly cutPlane: THREE.Mesh;
-    readonly stencilGroup: THREE.Group = new THREE.Group();
-    readonly helper: THREE.PlaneHelper;
+    readonly plane: ThreePlane;
+    readonly cutPlane: Mesh;
+    readonly stencilGroup: Group = new Group();
+    readonly helper: PlaneHelper;
 
     private _min: number = 0;
     private _max: number = 0;
@@ -45,16 +52,18 @@ export class Plane extends EventEmitter {
     get max() { return this._max; };
     get order() { return this._order; };
     get offset() { return this.plane.constant; };
-    get visible() { return this.cutPlane.visible; }
+    get visible() { return this.cutPlane.visible; };
+    get showHelper() { return this.helper.visible; };
+    get helperPlane() { return this.helper.children.at(0) as Mesh; };
 
-    readonly planeMaterial = new THREE.MeshBasicMaterial({
+    readonly planeMaterial = new MeshBasicMaterial({
         color: 0xfff000,
         stencilWrite: true,
         stencilRef: 0,
-        stencilFunc: THREE.NotEqualStencilFunc,
-        stencilFail: THREE.ReplaceStencilOp,
-        stencilZFail: THREE.ReplaceStencilOp,
-        stencilZPass: THREE.ReplaceStencilOp,
+        stencilFunc: NotEqualStencilFunc,
+        stencilFail: ReplaceStencilOp,
+        stencilZFail: ReplaceStencilOp,
+        stencilZPass: ReplaceStencilOp,
     });
 
     override addListener(event: "change", listener: Function): void {
@@ -70,19 +79,25 @@ export class Plane extends EventEmitter {
 
         const threePlanes = this.planeManager.GetThreePlanes();
 
-        if (!this.planeManager.clipIntersection)
+        if (!this.planeManager.clipIntersection) {
             this.planeManager.planes.forEach(plane => {
-                (plane.cutPlane.material as THREE.Material).clippingPlanes =
-                    threePlanes.filter((p) => p != plane.plane);
-            })
+                const planes = threePlanes.filter((p) => p != plane.plane);
+                (plane.cutPlane.material as Material).clippingPlanes = planes;
+                (plane.helperPlane.material as Material).clippingPlanes = planes;
+            });
+        }
         this.planeManager.included.forEach(item => {
             const obj = (item as any);
             if (obj.material != undefined) {
-                (obj.material as THREE.Material).clippingPlanes = threePlanes;
+                (obj.material as Material).clippingPlanes = threePlanes;
             }
         });
         this.planeManager.ClipIntersection(this.planeManager.clipIntersection);
         this.emit("change");
+    }
+
+    ShowHelper(value: boolean) {
+        this.helper.visible = value;
     }
 
     Invert() {
@@ -102,16 +117,16 @@ export class Plane extends EventEmitter {
     }
 
     Update() {
-        const box = new THREE.Box3().setFromObject(this.planeManager.GetModel());
-        const size = box.getBoundingSphere(new THREE.Sphere()).radius * 2;
-        const center = box.getBoundingSphere(new THREE.Sphere()).center;
+        const box = new Box3().setFromObject(this.planeManager.GetModel());
+        const size = box.getBoundingSphere(new Sphere()).radius * 2;
+        const center = box.getBoundingSphere(new Sphere()).center;
 
         this._min = -box.min.clone().multiply(this.plane.normal).length() - 1e-6;
         this._max = box.max.clone().multiply(this.plane.normal).length() + 1e-6;
 
         this.stencilGroup.traverse(item => {
             if ((item as any).geometry != undefined) {
-                var geom = (item as any).geometry as THREE.BufferGeometry;
+                var geom = (item as any).geometry as BufferGeometry;
                 geom.dispose();
             }
         })
@@ -120,7 +135,7 @@ export class Plane extends EventEmitter {
 
         this.helper.size = size;
 
-        const planeGeom = new THREE.PlaneGeometry(size * 3, size * 3);
+        const planeGeom = new PlaneGeometry(size * 3, size * 3);
 
         this.cutPlane.geometry.dispose();
         this.cutPlane.geometry = planeGeom;
@@ -131,67 +146,60 @@ export class Plane extends EventEmitter {
         this.stencilGroup.removeFromParent();
         this.stencilGroup.traverse(item => {
             if ((item as any).geometry != undefined) {
-                const geom = (item as any).geometry as THREE.BufferGeometry;
+                const geom = (item as any).geometry as BufferGeometry;
                 geom.dispose();
             }
         })
 
         this.cutPlane.removeFromParent();
         this.cutPlane.geometry.dispose();
-        (this.cutPlane.material as THREE.Material).dispose();
+        (this.cutPlane.material as Material).dispose();
 
         this.helper.removeFromParent();
         this.helper.dispose();
     }
 
-    private createStencilMesh(): THREE.Group {
-        var geometries: THREE.BufferGeometry[] = [];
-        this.planeManager.included.forEach(item => {
-            if ((item as any).geometry != undefined) {
-                var geom = (item as any).geometry as THREE.BufferGeometry;
-                geom = geom.clone();
-                item.updateMatrixWorld(true);
-                geom.applyMatrix4(item.matrixWorld);
-                if (geom.index != null)
-                    geom = geom.toNonIndexed();
-                if (geom.hasAttribute("color"))
-                    geom.deleteAttribute("color");
-                geometries.push(geom);
-            }
-        })
-        var geometry = BufferGeometryUtils.mergeGeometries(geometries);
-        geometries.forEach(item => item.dispose());
-        geometries = [];
+    private createStencilMesh(): Group {
+        const start = Date.now();
 
-        const group = new THREE.Group();
-        const mat1 = new THREE.MeshBasicMaterial({
-            side: THREE.BackSide,
-            stencilFunc: THREE.AlwaysStencilFunc,
-            stencilFail: THREE.IncrementWrapStencilOp,
-            stencilZFail: THREE.IncrementWrapStencilOp,
-            stencilZPass: THREE.IncrementWrapStencilOp,
+        let geometry = this.planeManager.stencilGeometry;
+        if (geometry == null)
+            geometry = this.planeManager.GenerateStencilMesh();
+
+        const end = Date.now();
+
+        const offset = (end - start) / 1000;
+        console.log(`Elapsed: ${offset} sec`);
+
+        const group = new Group();
+        const mat1 = new MeshBasicMaterial({
+            side: BackSide,
+            stencilFunc: AlwaysStencilFunc,
+            stencilFail: IncrementWrapStencilOp,
+            stencilZFail: IncrementWrapStencilOp,
+            stencilZPass: IncrementWrapStencilOp,
             colorWrite: false,
             depthTest: false,
             depthWrite: false,
             stencilWrite: true,
             clippingPlanes: [this.plane]
         });
-        const mat2 = new THREE.MeshBasicMaterial({
-            side: THREE.FrontSide,
-            stencilFunc: THREE.AlwaysStencilFunc,
-            stencilFail: THREE.DecrementWrapStencilOp,
-            stencilZFail: THREE.DecrementWrapStencilOp,
-            stencilZPass: THREE.DecrementWrapStencilOp,
+        const mat2 = new MeshBasicMaterial({
+            side: FrontSide,
+            stencilFunc: AlwaysStencilFunc,
+            stencilFail: DecrementWrapStencilOp,
+            stencilZFail: DecrementWrapStencilOp,
+            stencilZPass: DecrementWrapStencilOp,
             colorWrite: false,
             depthTest: false,
             depthWrite: false,
             stencilWrite: true,
             clippingPlanes: [this.plane]
         });
-        const meshCopy1 = new THREE.Mesh(geometry, mat1);
+        const meshCopy1 = new Mesh(geometry, mat1);
         meshCopy1.renderOrder = this.order;
         group.add(meshCopy1);
-        const meshCopy2 = new THREE.Mesh(geometry, mat2);
+        const meshCopy2 = new Mesh(geometry, mat2);
         meshCopy2.renderOrder = this.order;
         group.add(meshCopy2);
         return group;

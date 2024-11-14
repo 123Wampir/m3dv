@@ -52,21 +52,25 @@ export class MaterialManager extends EventEmitter {
     }
 
     DeleteMaterial(material: Material) {
+        let canDelete = true;
         this.modelMaterials.forEach((v, k) => {
-            if (v == material) {
+            if (v.uuid == material.uuid) {
                 console.warn(`Can't delete material because it's used by object: name: ${k.name}; uuid: ${k.uuid}`);
+                canDelete = false;
                 return;
             }
         })
-        if (this.materials.delete(material)) {
-            material.dispose();
+        if (canDelete) {
+            if (this.materials.delete(material)) {
+                material.dispose();
+            }
         }
     }
 
     ReplaceMaterial(oldMaterial: Material, newMaterial: Material) {
         this.AddMaterial(newMaterial);
         this.modelMaterials.forEach((v, k) => {
-            if (v == oldMaterial) {
+            if (v.uuid == oldMaterial.uuid) {
                 this.modelMaterials.set(k, newMaterial);
             }
         })

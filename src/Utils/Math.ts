@@ -1,4 +1,4 @@
-import { Box3, Object3D, Vector3 } from 'three';
+import { Box3, Float32BufferAttribute, Int32BufferAttribute, Mesh, Object3D, Triangle, Vector3 } from 'three';
 import { ConvexHull } from 'three/examples/jsm/math/ConvexHull.js'
 
 function determinant_3x3(m: number[][]) {
@@ -40,4 +40,25 @@ export function ComputeVolume(object: Object3D) {
         sum += V;
     }
     return sum;
+}
+
+export function ComputeArea(object: Object3D): number {
+    let area = 0;
+    object.traverse(item => {
+        const mesh = item as Mesh;
+        if (mesh.isMesh == true) {
+            const geometry = mesh.geometry.clone();
+            geometry.toNonIndexed();
+            const positions = geometry.getAttribute("position") as Float32BufferAttribute;
+            for (let i = 0; i < positions.count; i += 3) {
+                const a = new Vector3(positions.array[i], positions.array[i + 1], positions.array[i + 2]);
+                const b = new Vector3(positions.array[i + 3], positions.array[i + 4], positions.array[i + 5]);
+                const c = new Vector3(positions.array[i + 6], positions.array[i + 7], positions.array[i + 9]);
+                const face = new Triangle(a, b, c);
+                area += face.getArea();
+            }
+            geometry.dispose();
+        }
+    })
+    return area;
 }

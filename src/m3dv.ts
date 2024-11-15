@@ -12,3 +12,4 @@ export { BackgroundType, Enviroment, ToneMapping } from "./Managers/Objects/Envi
 export { Explode, ExplodeType } from "./Managers/Objects/Explode";
 export { Plane } from "./Managers/Planes/Plane";
 export { PlaneManager, SectionFillType } from "./Managers/Planes/PlaneManager";
+export { ComputeArea, ComputeVolume } from "./Utils/Math";

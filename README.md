@@ -35,5 +35,5 @@ see [example](./examples/) folder to see basic usage of viewer
 ## Showcase
 ![IBL usage](./readme/viewer2.png)
 ![Isolated view](./readme/viewer3.png)
-![Sections](./readme/viewer5.png)
-![Exploded view](./readme/viewer4.png)
+![Sections](./readme/viewer4.png)
+![Exploded view](./readme/viewer5.png)

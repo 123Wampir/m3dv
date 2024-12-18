@@ -52,7 +52,9 @@ window.onkeydown = (e: KeyboardEvent) => {
 }
 
 const occtImportJsWasmPath = new URL("../libs/occt-import-js/occt-import-js.wasm", import.meta.url).href;
-const viewer = new Viewer(canvas, { occtImportJsWasmPath: occtImportJsWasmPath });
+const workerPath = new URL("../src/Managers/FileManagerWorker", import.meta.url).href;
+
+const viewer = new Viewer(canvas, { fileManagerOptions: { occtimportjsWasmPath: occtImportJsWasmPath, workerPath: workerPath } });
 viewer.appearance.enviroment.SetBackgroundColor(0x222222)
 viewer.addListener("loaded", () => UpdatePlanesMinMax());
 const loadButton = document.getElementById("load-file");
@@ -61,7 +63,7 @@ loadButton!.onchange = (e) => {
     if (files.length != 0) {
         const file = files[0] as File;
         const src = URL.createObjectURL(file);
-        viewer.LoadModelFile(file.name, src);
+        viewer.LoadModelFile(file.name, src, true);
     }
 }
 wireframe.onchange = (e) => {

@@ -4,7 +4,8 @@ import { BufferGeometryUtils } from "three/examples/jsm/Addons.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export interface FileManagerOptions {
-    occtimportjsWasmPath?: string
+    occtimportjsWasmPath?: string,
+    workerPath?: string
 }
 
 export class FileManager {
@@ -28,7 +29,7 @@ export class FileManager {
     }
 
     async LoadModelInWorker(url: string, filename: string): Promise<Object3D> {
-        const workerUrl = new URL("./FileManagerWorker", import.meta.url);
+        const workerUrl = this.options.workerPath;
         const worker = new Worker(workerUrl, { type: "module" });
         return new Promise((resolve, reject) => {
             worker.onerror = function (e) {

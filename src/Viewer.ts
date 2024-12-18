@@ -8,7 +8,7 @@ import { FileManager, FileManagerOptions } from "./Managers/FileManager";
 import { EventEmitter } from "./Event/Event";
 
 export interface ViewerOptions {
-    occtImportJsWasmPath?: string
+    fileManagerOptions?: FileManagerOptions
 }
 
 export class Viewer extends EventEmitter {
@@ -21,12 +21,7 @@ export class Viewer extends EventEmitter {
         this.controls = new Controls(this);
         this.selectionManager = new SelectionManager(this);
 
-        let fileManagerOptions: FileManagerOptions = {};
-        if (options != null) {
-            fileManagerOptions.occtimportjsWasmPath = options.occtImportJsWasmPath;
-        }
-
-        this.fileManager = new FileManager(fileManagerOptions);
+        this.fileManager = new FileManager(options?.fileManagerOptions);
         this.sceneManager.modelManager.addListener("change", this.onUpVectorChange);
 
         this.stats = new Stats();
@@ -79,7 +74,7 @@ export class Viewer extends EventEmitter {
     }
 
     LoadModelFile(filename: string, src: string, useWorker = false) {
-        if (window.Worker != undefined && useWorker) {
+        if (window.Worker != undefined && useWorker && this.fileManager.options.workerPath != null) {
             this.fileManager.LoadModelInWorker(src, filename)
                 .then(e => {
                     this.sceneManager.Clear();

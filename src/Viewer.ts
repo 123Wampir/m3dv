@@ -14,7 +14,7 @@ export interface ViewerOptions {
 export class Viewer extends EventEmitter {
     constructor(canvas: HTMLCanvasElement, options: ViewerOptions = null) {
         super();
-        this.renderer = new WebGLRenderer({ antialias: true, canvas: canvas, logarithmicDepthBuffer: true });
+        this.renderer = new WebGLRenderer({ antialias: true, canvas: canvas, logarithmicDepthBuffer: true, alpha: true, preserveDrawingBuffer: true });
         (this.renderer as WebGLRenderer).localClippingEnabled = true;
         this.sceneManager = new SceneManager(this);
         this.appearance = new Appearance(this);

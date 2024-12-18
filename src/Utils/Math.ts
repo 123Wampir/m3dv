@@ -29,16 +29,17 @@ export function ComputeVolume(object: Object3D) {
     var ch = new ConvexHull();
     ch.setFromObject(object);
     let sum = 0;
-    let a = object.getWorldPosition(new Vector3(0, 0, 0));
+    const a = object.getWorldPosition(new Vector3(0, 0, 0));
     for (let index = 0; index < ch.faces.length; index++) {
         const face = ch.faces[index];
-        let b = face.edge.tail().point;
-        let c = face.edge.head().point;
-        let d = face.edge.next.head().point;
+        const b = face.edge.tail().point;
+        const c = face.edge.head().point;
+        const d = face.edge.next.head().point;
 
-        var V = tetrahedron_volume(a, b, c, d);
+        const V = tetrahedron_volume(a, b, c, d);
         sum += V;
     }
+    ch.cleanup();
     return sum;
 }
 
